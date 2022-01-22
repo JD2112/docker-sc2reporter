@@ -1,0 +1,27 @@
+version: '3.1'
+
+services:
+
+  mongo:
+    image: mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: sarscov2
+      MONGO_INITDB_ROOT_PASSWORD: frusklimuna4satass5h5
+      MONGO_DB_NAME:
+
+  app:
+    build: ./
+    restart: unless-stopped
+    depends_on:
+      - mongo
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx_conf.d:/etc/nginx/conf.d:ro
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - app

@@ -1,0 +1,9 @@
+# TODO: Lock down version numbers.
+flask
+flask-pymongo
+flask-login
+pytz
+numpy
+scikit-bio
+flask-wtf
+gunicorn
