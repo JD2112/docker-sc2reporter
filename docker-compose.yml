@@ -6,9 +6,10 @@ services:
     image: mongo
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: sarscov2
+      MONGO_INITDB_ROOT_USERNAME: jacob
       MONGO_INITDB_ROOT_PASSWORD: frusklimuna4satass5h5
-      MONGO_DB_NAME:
+      MONGO_DB_NAME: sarscov2
+
 
   app:
     build: ./

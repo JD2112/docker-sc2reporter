@@ -5,7 +5,9 @@ SECRET_KEY = 'frusklimuna4satass5h5'
 
 QC_MAX_PCT_N = 10
 DB_NAME = 'sarscov2'
-DATABASE = MongoClient('mongodb://mongo:27017/')[DB_NAME]
+UserName = 'jacob'
+PWD = 'frusklimuna4satass5h5'
+DATABASE = MongoClient(f'mongodb://mongo:27017/{DB_NAME}', username = UserName, password = PWD)
 SAMPLE_COLL = DATABASE.sample
 VARIANT_COLL = DATABASE.variant
 DEPTH_COLL = DATABASE.depth
