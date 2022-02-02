@@ -615,13 +615,10 @@ def num_samples_per_date(data):
 
 @login_manager.user_loader
 def load_user(username):
-    try:
-        u = app.config['USERS_COLL'].find_one({"_id": username})
-        if not u:
-            return None
-        return User(u['_id'], u['groups'], u.get('sc2_role', 'normal'))
-    except Exception as e:
-        print ('Exception: ',e)
+    u = app.config['USERS_COLL'].find_one({"_id": username})
+    if not u:
+        return None
+    return User(u['_id'], u['groups'], u.get('sc2_role', 'normal'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
