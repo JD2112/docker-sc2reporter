@@ -4,15 +4,11 @@ services:
 
   mongo:
     image: mongo:4.2
+    hostname: mongodb
     restart: unless-stopped
-    hostname: sarscov2
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: pass
     ports:
-      - 27017:27017
-    volumes:
-      - ./data
+      - "27017:27017"
+
 
   # app:
   #   build: ./
@@ -21,6 +17,8 @@ services:
   #     - mongo
   #   links:
   #     - mongo
+  #   ports:
+  #     - "8000:8000"
 
   
   
