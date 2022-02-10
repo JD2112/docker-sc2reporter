@@ -3,7 +3,7 @@ import pymongo
 from pprint import pprint
 
 #Is the database existing
-def connect_db():
+def connect_client():
     try:
         return pymongo.MongoClient()
     except Exception as e:
@@ -29,17 +29,25 @@ def get_all_collection_data(db):
     for strColl in db.list_collection_names():
         print('Collection: ',strColl)
         pprint([x for x in db[strColl].find()])
+    
+def print_users(db):
+    [print(x) for x in db.users.find()]
+    print(db.users.find_one({"_id": 'Test'}))
 
 #Runs the program
 if __name__ == '__main__':
     try:
-        client = connect_db()
+        db_name = 'sarscov2_standalone'
+
+        client = connect_client()
+        print(client)
         list_databases(client)
 
-        db = client['sarscov2']
-        list_collections(db)
+        db = client[db_name]
+        list_collections(db, db_name)
 
-        get_all_collection_data(db)
+        print_users(db)
 
-    except Exception as e:
-        print (e)
+
+    except Exception:
+        raise Exception
