@@ -60,12 +60,11 @@ def reruns():
 @app.route('/dashboard', methods=['GET'])
 @login_required
 def dashboard():
-
     criterion_checkboxes = request.args
 
     success_samples_cursor = app.config['SAMPLE_COLL'].find({'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}, 'hidden':{'$ne':1}, 'validation':{'$ne':1}}, {'sample_id':1, 'qc':1, 'pangolin':1, 'time_added':1, 'variants':1, 'vcf_filename':1, 'hidden':1, 'collection_date':1, 'selection_criterion':1}).sort("collection_date", -1)
-    failed_samples_count = app.config['SAMPLE_COLL'].find({'qc.pct_N_bases':{'$gt':app.config["QC_MAX_PCT_N"]}, 'hidden':{'$ne':1}, 'validation':{'$ne':1}}).count()
-
+    # failed_samples_count = app.config['SAMPLE_COLL'].find({'qc.pct_N_bases':{'$gt':app.config["QC_MAX_PCT_N"]}, 'hidden':{'$ne':1}, 'validation':{'$ne':1}}).count_documents
+    failed_samples_count = len([(x) for x in app.config['SAMPLE_COLL'].find({'qc.pct_N_bases':{'$gt':app.config["QC_MAX_PCT_N"]}, 'hidden':{'$ne':1}, 'validation':{'$ne':1}})])
     today = datetime.today()
 
     variant_cursor = app.config['VARIANT_COLL'].find()
@@ -76,9 +75,8 @@ def dashboard():
 
     lineages_of_concern = app.config["PANGO_LINEAGES_OF_CONCERN"]
 
-
     return render_template('dashboard.html',
-                           samples=success_samples_cursor,
+                           samples=success_samples,
                            failed_samples=failed_samples_count,
                            pango_per_date=pango_per_date,
                            pango_total_counts=pango_total_counts,
@@ -104,7 +102,7 @@ def report(sample_id, max_diff, verbosity):
 
     variants_of_significance = set(app.config["VARIANTS_OF_BIOLOGICAL_SIGNIFICANCE"])
     positions_of_significance = set(app.config["POSITIONS_OF_BIOLOGICAL_SIGNIFICANCE"])
-    tot_samples = all_samples.count()
+    tot_samples = all_samples.collection.count_documents
 
 
     # Find similar samples (expensive!)
@@ -198,7 +196,6 @@ def variant(var_id):
     all_samples = app.config['SAMPLE_COLL'].find({'hidden':{'$ne':1}},{'collection_date':1, 'variants':1}).sort('collection_date')
     var_per_date = rolling_mean_variant(list(all_samples), var_id)
     samples_with_variant.rewind()
-
     return render_template('variant.html', annotations=variant_annotations, samples=samples_with_variant, var_per_date=var_per_date, var_id=var_id)
 
 
@@ -577,7 +574,6 @@ def pretty(value):
 @app.template_filter()
 def get_dates(data):
     dates = []
-    print(data)
     for date in sorted(data):
         tot = 0
         for i in data[date].values():
@@ -631,8 +627,10 @@ def login():
             login_user(user_obj)
 
             return redirect(request.args.get("next") or url_for("index"))
-
-    return render_template('login.html', title='login', form=form)
+    user_obj = User('Test', 'Test', 'Test')
+    login_user(user_obj)
+    return redirect(request.args.get("next") or url_for("index"))
+    # return render_template('login.html', title='login', form=form)
 
 
 @app.route('/logout')

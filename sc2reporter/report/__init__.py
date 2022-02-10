@@ -5,5 +5,3 @@ app = Flask(__name__)
 app.config.from_object('config')
 
 import report.views
-
-print('test init')
