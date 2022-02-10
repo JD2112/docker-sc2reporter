@@ -7,7 +7,7 @@ from pymongo.errors import DuplicateKeyError
 
 def main():
     # Connect to the DB
-    collection = MongoClient(username='root', password='pass')["sarscov2"]["users"]
+    collection = MongoClient()["sarscov2_standalone"]["users"]
 
     # Ask for data to store
     user = input("Enter your username: ")
