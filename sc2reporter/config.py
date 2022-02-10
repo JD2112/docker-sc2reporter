@@ -4,15 +4,10 @@ WTF_CSRF_ENABLED = True
 SECRET_KEY = 'frusklimuna4satass5h5'
 
 QC_MAX_PCT_N = 10
-DB_NAME = 'sarscov2'
-# CLIENT = MongoClient("mongodb://localhost:27017/", username = 'root', password = 'pass')
+DB_NAME = 'sarscov2_standalone'
 
-CLIENT = MongoClient(host='sarscov2',
-                         port=27017, 
-                         username='root', 
-                         password='pass',
-                        authSource="admin")
 
+CLIENT = MongoClient()
 
 DATABASE = CLIENT[DB_NAME]
 SAMPLE_COLL = DATABASE.sample
