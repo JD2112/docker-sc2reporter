@@ -1,12 +1,111 @@
 {% extends "report_layout.html" %}
 
 {% block body %}
-{{tree}}
+<!-- {{tree}} -->
 
-<p>
+<!-- <p>
   {{response}}<br><br>
   {{response.content}}<br><br>
   <pre>{{response.request.body|pretty}}</pre><br><br>
-</p>
-{% endblock %}
+</p> -->
 
+
+<style>
+  body { 
+  font: 14px helvetica neue, helvetica, arial, sans-serif;
+}
+
+#cy {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+#eat {
+  position: absolute;
+  left: 1em;
+  top: 1em;
+  font-size: 1em;
+  z-index: -1;
+  color: #c88;
+}
+
+</style>
+<div id='cy'></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.21.0/cytoscape.min.js"></script>
+
+<script>
+
+
+var cy = cytoscape({
+  container: document.getElementById('cy'),
+
+  boxSelectionEnabled: false,
+  autounselectify: true,
+
+  style: cytoscape.stylesheet()
+    .selector('node')
+      .css({
+        'height': 40,
+        'width': 40,
+        'background-fit': 'cover',
+        'border-color': '#000',
+        'border-width': 3,
+        'border-opacity': 0.5
+      })
+    .selector('.eating')
+      .css({
+        'border-color': 'red'
+        
+      })
+    .selector('.eater')
+      .css({
+        'border-width': 9
+      })
+    .selector('edge')
+      .css({
+        'curve-style': 'bezier',
+        'width': 6,
+        // 'target-arrow-shape': 'triangle',
+        'line-color': '#ffaaaa',
+        'target-arrow-color': '#ffaaaa'
+      })
+      .selector('#grasshopper')
+      .css({
+        'height' : 0.0001,
+        'width' : 0.0001
+      }),
+
+  elements: {
+    nodes: [
+      { data: { id: 'cat' } },
+      { data: { id: 'bird' } },
+      { data: { id: 'ladybug' } },
+      { data: { id: 'aphid' } },
+      { data: { id: 'rose' } },
+      { data: { id: 'grasshopper' } },
+      { data: { id: 'plant' } },
+      { data: { id: 'wheat' } }
+    ],
+    edges: [
+      { data: { source: 'cat', target: 'bird' } },
+      { data: { source: 'bird', target: 'ladybug' } },
+      { data: { source: 'bird', target: 'grasshopper' } },
+      { data: { source: 'grasshopper', target: 'plant' } },
+      { data: { source: 'grasshopper', target: 'wheat' } },
+      { data: { source: 'ladybug', target: 'aphid' } },
+      { data: { source: 'aphid', target: 'rose' } }
+    ]
+  },
+
+  layout: {
+    name: 'breadthfirst',
+    directed: true,
+    padding: 10
+  }
+}); 
+</script>
+{% endblock %}

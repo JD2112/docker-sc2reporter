@@ -102,8 +102,10 @@ def report(sample_id, max_diff, verbosity):
 
     variants_of_significance = set(app.config["VARIANTS_OF_BIOLOGICAL_SIGNIFICANCE"])
     positions_of_significance = set(app.config["POSITIONS_OF_BIOLOGICAL_SIGNIFICANCE"])
-    tot_samples = all_samples.collection.count_documents
-
+    #Is this right? 
+    # tot_samples = len(list(all_samples)[0])
+    #original line:
+    tot_samples = all_samples
 
     # Find similar samples (expensive!)
     samples_to_show, variants, report_variants, sample_counts = get_similar_samples(sample_to_report, all_samples, max_diff)
@@ -313,7 +315,7 @@ def create_tree(group, value):
         "tree": str(tree.root_at_midpoint()).rstrip(),
         "timeline_grouped": True,
     }
-
+    print('Microreact data: ',json.dumps(microreact_data))
     response = requests.post('https://microreact.org/api/project/', headers={'Content-type': 'application/json; charset=UTF-8'}, data = json.dumps(microreact_data))
 
     if response.ok:
