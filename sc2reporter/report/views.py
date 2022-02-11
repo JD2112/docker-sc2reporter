@@ -402,7 +402,7 @@ def create_nodes(group, value):
     microreact_data = {
         "data": sample_metadata,
         "name": value,
-        "tree": str(tree.root_at_midpoint()).rstrip(),
+        "tree": (tree.root_at_midpoint()),
         "timeline_grouped": True,
     }
     
@@ -723,3 +723,97 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+#Converts newick formatted data to cytoscape format
+def newick_to_cyto(str_newick_data):
+    #Initiates all variables which will be used
+    # list_nodes = list()
+    # list_edges = list()
+    # str_node = ''
+    # bool_start_node, bool_start_edge = False, False
+    # int_depth = 0
+    # str_newick_data = str_newick_data[::-1]
+    # for int_counter, str_char in enumerate(str_newick_data):
+        
+    #     Counts the depth
+    #     if str_char == '(': int_depth += 1
+    #     elif str_char == ')': int_depth -= 1
+
+    #     #Check if the incoming word is an node or edge
+    #     bool_start_node, bool_start_edge = check_if_allowed(str_char, '()'), check_if_allowed(str_char, ':')
+
+    #     if bool_start_node:
+    #         ...
+        
+    ancestors = list()
+    tree = dict()
+    tokens = re.split('/\s*(;|\(|\)|,|:)\s*/' ,str_newick_data)
+
+    for str_token in tokens:
+	    if str_token == '(':
+            subtree = dict()
+            tree['children'] = [subtree]
+            ancestors.append(tree)
+            tree = subtree
+            break
+        elif str_token == ',':
+            subtree = dict()
+            ancestors[len(ancestors)-1]['children'].append(subtree)
+            tree = subtree
+            break
+            
+    return tokens
+
+
+
+
+
+	#     switch (token) {
+	# 	    case '(': // new children
+	# 		    var subtree = {};
+	# 		    tree.children = [subtree];
+	# 		    ancestors.push(tree);
+	# 		    tree = subtree;
+	# 		    break;
+	# 	    case ',': // another branch
+	# 			var subtree = {};
+	# 			ancestors[ancestors.length-1].children.push(subtree);
+	# 			tree = subtree;
+	# 			break;
+	# 		case ')': // optional name next
+	# 			tree = ancestors.pop();
+	# 			break;
+	# 		case ':': // optional length next
+	# 			break;
+	# 		default:
+	# 			x = tokens[i-1];
+	# 			if (x == ')' or x == '(' or x == ',') {
+	# 				tree.name = token;
+	# 			} else if (x == ':') {
+	# 				tree.branch_length = parseFloat(token);
+	# 			}
+	# 	}
+	# }
+    # list_newick = re.split('\(|\)' ,str_newick_data)
+    
+
+    # list_newick = list(filter(len, list_newick))
+
+    # #Gets all nodes
+    # for str_newick in list_newick:
+    #     if ',' in str_newick: 
+    #         str_newick =  str_newick.split(',')
+    #         str_newick = (list(filter(len, str_newick)))
+    #         for el in str_newick:
+    #             list_nodes.append(el[0])
+    #     else:
+    #         list_nodes.append(str_newick[0])
+
+
+    return str_newick_data
+
+def check_if_allowed(str_char, str_forbidden_chars):
+    return str_char not in str_forbidden_chars and str_char != ','
+
+str_newick = '((B:0.2,(C:0.3,D:0.4)E:0.5)F:0.1)A;'
+
+print(newick_to_cyto(str_newick))
