@@ -315,7 +315,6 @@ def create_tree(group, value):
         "tree": str(tree.root_at_midpoint()).rstrip(),
         "timeline_grouped": True,
     }
-    print('Microreact data: ',json.dumps(microreact_data))
     response = requests.post('https://microreact.org/api/project/', headers={'Content-type': 'application/json; charset=UTF-8'}, data = json.dumps(microreact_data))
 
     if response.ok:
@@ -324,6 +323,90 @@ def create_tree(group, value):
     return render_template('tree.html', tree=tree, response=response)
 
 
+#Creates an api endpoint for which the cytoscape.js script will fetch data from
+@app.route('/nodes/<string:group>/<string:value>')
+@login_required
+def create_nodes(group, value):
+
+    if group == "pango":
+        samples = app.config['SAMPLE_COLL'].find({'pangolin.type': value, 'hidden':{'$ne':1}, 'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}})
+    if group == "nextstrain":
+        value = value.replace('_','/')
+        samples = app.config['SAMPLE_COLL'].find({'nextclade': value, 'hidden':{'$ne':1}, 'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}})
+    if group == "bleek":
+        samples = app.config['SAMPLE_COLL'].find({'pangolin.type': "B.1.1.7", 'variants.id':'23012_G>A', 'hidden':{'$ne':1}, 'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}})
+    elif group == "all":
+        samples = app.config['SAMPLE_COLL'].find({'hidden':{'$ne':1},'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}})
+
+    presence = defaultdict(set)
+    all_samples = set()
+    sample_metadata = []
+    pango_color = {}
+    nextstrain_color = {}
+
+    r = lambda: random.randint(0,255)
+
+    for sample in samples:
+        if "collection_date" not in sample:
+            continue
+
+        for var in sample.get("variants",[]):
+            presence[var["id"]].add(sample["sample_id"])
+
+        all_samples.add(sample["sample_id"])
+
+        pango_type = sample["pangolin"]["type"]
+        nextstrain_clade = sample.get("nextclade")
+
+        # Generate random color for new pango types
+        if pango_type not in pango_color:
+            pango_color[pango_type] = '#%02X%02X%02X' % (r(),r(),r())
+
+        if nextstrain_clade not in nextstrain_color:
+            nextstrain_color[nextstrain_clade] = '#%02X%02X%02X' % (r(),r(),r())
+
+        sample_metadata.append({
+            'node': sample.get('sample_id'),
+            'year': sample["collection_date"].year,
+            'month': '{:02d}'.format(sample["collection_date"].month),
+            'day': '{:02d}'.format(sample["collection_date"].day),
+            'country': "Sweden",
+            'pango': pango_type,
+            'pango__color': pango_color[pango_type],
+            'nextstrain': nextstrain_clade,
+            'nextstrain__color': nextstrain_color[nextstrain_clade],
+            'country__color': "#358"
+        })
+
+    distance = defaultdict(dict)
+
+    for s1 in all_samples:
+        for s2 in all_samples:
+            distance[s1][s2] = 0
+
+    for var_id, samples_with_variant in presence.items():
+        samples_without_variant = all_samples ^ samples_with_variant
+        for s_without in samples_without_variant:
+            for s_with in samples_with_variant:
+                distance[s_without][s_with] += 1
+                distance[s_with][s_without] += 1
+
+    data = []
+    for s in all_samples:
+        data.append(list(distance[s].values()))
+
+    ids = list(all_samples)
+    dm = DistanceMatrix(data, ids)
+    tree = nj(dm)
+
+    microreact_data = {
+        "data": sample_metadata,
+        "name": value,
+        "tree": str(tree.root_at_midpoint()).rstrip(),
+        "timeline_grouped": True,
+    }
+    
+    return render_template('nodes.html', data = (microreact_data))
 
 def get_similar_samples(sample_to_report, all_samples, max_diffs):
 
