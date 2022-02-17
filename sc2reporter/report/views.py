@@ -1,9 +1,10 @@
 from flask_pymongo import PyMongo
-from report import app
+from report import app, api
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, jsonify, send_from_directory, make_response, escape
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 import json
 from bson.objectid import ObjectId
+from flask_restful import Resource, Api
 import pprint
 from collections import defaultdict
 import re
@@ -23,19 +24,23 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
+
 @app.route('/', methods=['GET'])
 @login_required
 def index():
     show_validation = request.args.get("validation", "")
     search_string = request.args.get("search_string", "")
 
-    query = build_sample_query(search_string=search_string, validation=show_validation)
+    query = build_sample_query(
+        search_string=search_string, validation=show_validation)
     samples_cursor = app.config['SAMPLE_COLL'].find(query).sort("_id", -1)
 
     samples = add_significant_variants(samples_cursor)
     lineages_of_concern = app.config["PANGO_LINEAGES_OF_CONCERN"]
-    variants_of_significance = set(app.config["VARIANTS_OF_BIOLOGICAL_SIGNIFICANCE"])
-    positions_of_significance = set(app.config["POSITIONS_OF_BIOLOGICAL_SIGNIFICANCE"])
+    variants_of_significance = set(
+        app.config["VARIANTS_OF_BIOLOGICAL_SIGNIFICANCE"])
+    positions_of_significance = set(
+        app.config["POSITIONS_OF_BIOLOGICAL_SIGNIFICANCE"])
     verbosity = request.args.get("verbosity", "simple")
     return render_template('main.html',
                            samples=samples,
@@ -48,7 +53,8 @@ def index():
 @app.route('/reruns')
 @login_required
 def reruns():
-    samples = app.config['SAMPLE_COLL'].find({'validation':{'$ne':1}}).sort("time_added", -1)
+    samples = app.config['SAMPLE_COLL'].find(
+        {'validation': {'$ne': 1}}).sort("time_added", -1)
     sample_dict = defaultdict(list)
     for s in samples:
         sample_dict[s["sample_id"]].append(s)
@@ -56,22 +62,25 @@ def reruns():
     return render_template('reruns.html', samples=sample_dict)
 
 
-
 @app.route('/dashboard', methods=['GET'])
 @login_required
 def dashboard():
     criterion_checkboxes = request.args
 
-    success_samples_cursor = app.config['SAMPLE_COLL'].find({'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}, 'hidden':{'$ne':1}, 'validation':{'$ne':1}}, {'sample_id':1, 'qc':1, 'pangolin':1, 'time_added':1, 'variants':1, 'vcf_filename':1, 'hidden':1, 'collection_date':1, 'selection_criterion':1}).sort("collection_date", -1)
+    success_samples_cursor = app.config['SAMPLE_COLL'].find({'qc.pct_N_bases': {'$lte': app.config["QC_MAX_PCT_N"]}, 'hidden': {'$ne': 1}, 'validation': {'$ne': 1}}, {
+                                                            'sample_id': 1, 'qc': 1, 'pangolin': 1, 'time_added': 1, 'variants': 1, 'vcf_filename': 1, 'hidden': 1, 'collection_date': 1, 'selection_criterion': 1}).sort("collection_date", -1)
     # failed_samples_count = app.config['SAMPLE_COLL'].find({'qc.pct_N_bases':{'$gt':app.config["QC_MAX_PCT_N"]}, 'hidden':{'$ne':1}, 'validation':{'$ne':1}}).count_documents
-    failed_samples_count = len([(x) for x in app.config['SAMPLE_COLL'].find({'qc.pct_N_bases':{'$gt':app.config["QC_MAX_PCT_N"]}, 'hidden':{'$ne':1}, 'validation':{'$ne':1}})])
+    failed_samples_count = len([(x) for x in app.config['SAMPLE_COLL'].find({'qc.pct_N_bases': {
+                               '$gt': app.config["QC_MAX_PCT_N"]}, 'hidden':{'$ne': 1}, 'validation': {'$ne': 1}})])
     today = datetime.today()
 
     variant_cursor = app.config['VARIANT_COLL'].find()
 
     success_samples = list(success_samples_cursor)
-    pango_per_date, pango_total_counts = rolling_mean_pango_types(success_samples, criterion_checkboxes)
-    pango_count_per_week, weeks = pango_per_week(success_samples, criterion_checkboxes)
+    pango_per_date, pango_total_counts = rolling_mean_pango_types(
+        success_samples, criterion_checkboxes)
+    pango_count_per_week, weeks = pango_per_week(
+        success_samples, criterion_checkboxes)
 
     lineages_of_concern = app.config["PANGO_LINEAGES_OF_CONCERN"]
 
@@ -91,38 +100,44 @@ def dashboard():
 @app.route('/report/<string:sample_id>/<int:max_diff>/<string:verbosity>')
 @login_required
 def report(sample_id, max_diff, verbosity):
-    sample_to_report = app.config['SAMPLE_COLL'].find_one({'_id':ObjectId(sample_id)})
+    sample_to_report = app.config['SAMPLE_COLL'].find_one(
+        {'_id': ObjectId(sample_id)})
 
     replicates = []
-    if verbosity=="advanced":
+    if verbosity == "advanced":
         all_samples = app.config['SAMPLE_COLL'].find()
-        replicates = app.config['SAMPLE_COLL'].find({'sample_id':sample_to_report["sample_id"]})
+        replicates = app.config['SAMPLE_COLL'].find(
+            {'sample_id': sample_to_report["sample_id"]})
     else:
-        all_samples = app.config['SAMPLE_COLL'].find({'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}, 'hidden':{'$ne':1}})
+        all_samples = app.config['SAMPLE_COLL'].find(
+            {'qc.pct_N_bases': {'$lte': app.config["QC_MAX_PCT_N"]}, 'hidden': {'$ne': 1}})
 
-    variants_of_significance = set(app.config["VARIANTS_OF_BIOLOGICAL_SIGNIFICANCE"])
-    positions_of_significance = set(app.config["POSITIONS_OF_BIOLOGICAL_SIGNIFICANCE"])
-    #Is this right? 
+    variants_of_significance = set(
+        app.config["VARIANTS_OF_BIOLOGICAL_SIGNIFICANCE"])
+    positions_of_significance = set(
+        app.config["POSITIONS_OF_BIOLOGICAL_SIGNIFICANCE"])
+    # Is this right?
     # tot_samples = len(list(all_samples)[0])
-    #original line:
+    # original line:
     tot_samples = all_samples
 
     # Find similar samples (expensive!)
-    samples_to_show, variants, report_variants, sample_counts = get_similar_samples(sample_to_report, all_samples, max_diff)
+    samples_to_show, variants, report_variants, sample_counts = get_similar_samples(
+        sample_to_report, all_samples, max_diff)
 
     sample_ids = []
     variant_data = {}
     positions = []
     for sample in sorted(samples_to_show, key=lambda k: k["n_diff"]):
-        #sid = sample["sample_id"]
+        # sid = sample["sample_id"]
         sid = str(sample["_id"])
         sample_ids.append(sid)
         variant_data[sid] = {}
         variant_data[sid]["variants"] = {}
         variant_data[sid]["sample_data"] = sample
         for var in variants:
-            pos,bases = var.split('_')
-            ref,alt = bases.split('>')
+            pos, bases = var.split('_')
+            ref, alt = bases.split('>')
 
             positions.append(int(pos))
 
@@ -140,17 +155,15 @@ def report(sample_id, max_diff, verbosity):
             else:
                 variant_data[sid]["variants"][var]["status"] = "missing"
 
-
-    depth_data_cursor = app.config['DEPTH_COLL'].find({'sample_oid': {'$in': sample_ids}, 'pos': {'$in': list(positions)}})
+    depth_data_cursor = app.config['DEPTH_COLL'].find(
+        {'sample_oid': {'$in': sample_ids}, 'pos': {'$in': list(positions)}})
     depth_data = defaultdict(dict)
     for d in depth_data_cursor:
         depth_data[d["sample_oid"]][d["pos"]] = d
 
-
-
-    variant_annotation_cursor = app.config['VARIANT_COLL'].find({'_id': {'$in': list(variants)}})
+    variant_annotation_cursor = app.config['VARIANT_COLL'].find(
+        {'_id': {'$in': list(variants)}})
     variant_annotation = {}
-
 
     for var_info in variant_annotation_cursor:
         csq = var_info["csq"]
@@ -161,6 +174,7 @@ def report(sample_id, max_diff, verbosity):
         variant_annotation[var_info["_id"]] = var_info
 
     return render_template('report.html', sample=sample_to_report, samples=samples_to_show, variant_data=variant_data, variants=variants, variant_annotation=variant_annotation, depth=depth_data, verbosity=verbosity, sample_counts=sample_counts, tot_samples=tot_samples, replicates=replicates, max_diff=max_diff)
+
 
 @app.route('/mutations')
 @login_required
@@ -190,12 +204,16 @@ def mutations():
 @app.route('/variant/<string:var_id>')
 @login_required
 def variant(var_id):
-    variant_annotations = app.config['VARIANT_COLL'].find_one({'_id': unesc(var_id)})
+    variant_annotations = app.config['VARIANT_COLL'].find_one(
+        {'_id': unesc(var_id)})
     search_string = request.args.get("search_string", "")
-    query = build_sample_query(search_string=search_string, mutation=unesc(var_id))
+    query = build_sample_query(
+        search_string=search_string, mutation=unesc(var_id))
 
-    samples_with_variant = app.config['SAMPLE_COLL'].find(query).sort('collection_date',-1)
-    all_samples = app.config['SAMPLE_COLL'].find({'hidden':{'$ne':1}},{'collection_date':1, 'variants':1}).sort('collection_date')
+    samples_with_variant = app.config['SAMPLE_COLL'].find(
+        query).sort('collection_date', -1)
+    all_samples = app.config['SAMPLE_COLL'].find({'hidden': {'$ne': 1}}, {
+                                                 'collection_date': 1, 'variants': 1}).sort('collection_date')
     var_per_date = rolling_mean_variant(list(all_samples), var_id)
     samples_with_variant.rewind()
     return render_template('variant.html', annotations=variant_annotations, samples=samples_with_variant, var_per_date=var_per_date, var_id=var_id)
@@ -207,19 +225,24 @@ def pangolin(pango_type):
     search_string = request.args.get("search_string", "")
     query = build_sample_query(search_string=search_string, pango=pango_type)
 
-    samples_with_type = app.config['SAMPLE_COLL'].find(query).sort('collection_date')
+    samples_with_type = app.config['SAMPLE_COLL'].find(
+        query).sort('collection_date')
     samples = add_significant_variants(samples_with_type)
 
-    all_samples = app.config['SAMPLE_COLL'].find({'hidden':{'$ne':1}},{'collection_date':1, 'pangolin.type':1}).sort('collection_date')
-    pango_per_date, pango_total_counts = rolling_mean_pango_types(list(all_samples))
+    all_samples = app.config['SAMPLE_COLL'].find({'hidden': {'$ne': 1}}, {
+                                                 'collection_date': 1, 'pangolin.type': 1}).sort('collection_date')
+    pango_per_date, pango_total_counts = rolling_mean_pango_types(
+        list(all_samples))
 
     lineages_of_concern = app.config["PANGO_LINEAGES_OF_CONCERN"]
     return render_template('pangolin.html', samples=samples, pangotype=pango_type, lineages_of_concern=lineages_of_concern, pango_per_date=pango_per_date)
 
+
 @app.route('/bleek')
 @login_required
 def bleek():
-    samples_with_type = app.config['SAMPLE_COLL'].find({'pangolin.type': "B.1.1.7", 'variants.id': '23012_G>A', 'hidden':{'$ne':1}}).sort('collection_date')
+    samples_with_type = app.config['SAMPLE_COLL'].find(
+        {'pangolin.type': "B.1.1.7", 'variants.id': '23012_G>A', 'hidden': {'$ne': 1}}).sort('collection_date')
     samples = add_significant_variants(samples_with_type)
 
     lineages_of_concern = app.config["PANGO_LINEAGES_OF_CONCERN"]
@@ -230,7 +253,8 @@ def bleek():
 @login_required
 def nextstrain(clade):
     clade = clade.replace("_", "/")
-    samples_with_clade = app.config['SAMPLE_COLL'].find({'nextclade': clade, 'hidden':{'$ne':1}}).sort('collection_date')
+    samples_with_clade = app.config['SAMPLE_COLL'].find(
+        {'nextclade': clade, 'hidden': {'$ne': 1}}).sort('collection_date')
     return render_template('nextstrain.html', samples=samples_with_clade, clade=clade)
 
 
@@ -239,14 +263,18 @@ def nextstrain(clade):
 def create_tree(group, value):
 
     if group == "pango":
-        samples = app.config['SAMPLE_COLL'].find({'pangolin.type': value, 'hidden':{'$ne':1}, 'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}})
+        samples = app.config['SAMPLE_COLL'].find({'pangolin.type': value, 'hidden': {
+                                                 '$ne': 1}, 'qc.pct_N_bases': {'$lte': app.config["QC_MAX_PCT_N"]}})
     if group == "nextstrain":
-        value = value.replace('_','/')
-        samples = app.config['SAMPLE_COLL'].find({'nextclade': value, 'hidden':{'$ne':1}, 'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}})
+        value = value.replace('_', '/')
+        samples = app.config['SAMPLE_COLL'].find({'nextclade': value, 'hidden': {
+                                                 '$ne': 1}, 'qc.pct_N_bases': {'$lte': app.config["QC_MAX_PCT_N"]}})
     if group == "bleek":
-        samples = app.config['SAMPLE_COLL'].find({'pangolin.type': "B.1.1.7", 'variants.id':'23012_G>A', 'hidden':{'$ne':1}, 'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}})
+        samples = app.config['SAMPLE_COLL'].find({'pangolin.type': "B.1.1.7", 'variants.id': '23012_G>A', 'hidden': {
+                                                 '$ne': 1}, 'qc.pct_N_bases': {'$lte': app.config["QC_MAX_PCT_N"]}})
     elif group == "all":
-        samples = app.config['SAMPLE_COLL'].find({'hidden':{'$ne':1},'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}})
+        samples = app.config['SAMPLE_COLL'].find(
+            {'hidden': {'$ne': 1}, 'qc.pct_N_bases': {'$lte': app.config["QC_MAX_PCT_N"]}})
 
     presence = defaultdict(set)
     all_samples = set()
@@ -254,13 +282,13 @@ def create_tree(group, value):
     pango_color = {}
     nextstrain_color = {}
 
-    r = lambda: random.randint(0,255)
+    r = lambda: random.randint(0, 255)
 
     for sample in samples:
         if "collection_date" not in sample:
             continue
 
-        for var in sample.get("variants",[]):
+        for var in sample.get("variants", []):
             presence[var["id"]].add(sample["sample_id"])
 
         all_samples.add(sample["sample_id"])
@@ -270,10 +298,11 @@ def create_tree(group, value):
 
         # Generate random color for new pango types
         if pango_type not in pango_color:
-            pango_color[pango_type] = '#%02X%02X%02X' % (r(),r(),r())
+            pango_color[pango_type] = '#%02X%02X%02X' % (r(), r(), r())
 
         if nextstrain_clade not in nextstrain_color:
-            nextstrain_color[nextstrain_clade] = '#%02X%02X%02X' % (r(),r(),r())
+            nextstrain_color[nextstrain_clade] = '#%02X%02X%02X' % (
+                r(), r(), r())
 
         sample_metadata.append({
             'id': sample.get('sample_id'),
@@ -307,106 +336,24 @@ def create_tree(group, value):
 
     ids = list(all_samples)
     dm = DistanceMatrix(data, ids)
-    tree = nj(dm)
+    tree = nj(dm, result_constructor = str)
 
     microreact_data = {
         "data": sample_metadata,
         "name": value,
-        "tree": str(tree.root_at_midpoint()).rstrip(),
+        "tree": str(tree),
         "timeline_grouped": True,
     }
-    response = requests.post('https://microreact.org/api/project/', headers={'Content-type': 'application/json; charset=UTF-8'}, data = json.dumps(microreact_data))
+    response = requests.post('https://microreact.org/api/project/', headers={
+                             'Content-type': 'application/json; charset=UTF-8'}, data=json.dumps(microreact_data))
 
     if response.ok:
         return redirect(json.loads(response.content)["url"])
-
-    return render_template('tree.html', tree=tree, response=response)
-
-
-#Creates an api endpoint for which the cytoscape.js script will fetch data from
-@app.route('/nodes/<string:group>/<string:value>')
-@login_required
-def create_nodes(group, value):
-
-    if group == "pango":
-        samples = app.config['SAMPLE_COLL'].find({'pangolin.type': value, 'hidden':{'$ne':1}, 'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}})
-    if group == "nextstrain":
-        value = value.replace('_','/')
-        samples = app.config['SAMPLE_COLL'].find({'nextclade': value, 'hidden':{'$ne':1}, 'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}})
-    if group == "bleek":
-        samples = app.config['SAMPLE_COLL'].find({'pangolin.type': "B.1.1.7", 'variants.id':'23012_G>A', 'hidden':{'$ne':1}, 'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}})
-    elif group == "all":
-        samples = app.config['SAMPLE_COLL'].find({'hidden':{'$ne':1},'qc.pct_N_bases':{'$lte':app.config["QC_MAX_PCT_N"]}})
-
-    presence = defaultdict(set)
-    all_samples = set()
-    sample_metadata = []
-    pango_color = {}
-    nextstrain_color = {}
-
-    r = lambda: random.randint(0,255)
-
-    for sample in samples:
-        if "collection_date" not in sample:
-            continue
-
-        for var in sample.get("variants",[]):
-            presence[var["id"]].add(sample["sample_id"])
-
-        all_samples.add(sample["sample_id"])
-
-        pango_type = sample["pangolin"]["type"]
-        nextstrain_clade = sample.get("nextclade")
-
-        # Generate random color for new pango types
-        if pango_type not in pango_color:
-            pango_color[pango_type] = '#%02X%02X%02X' % (r(),r(),r())
-
-        if nextstrain_clade not in nextstrain_color:
-            nextstrain_color[nextstrain_clade] = '#%02X%02X%02X' % (r(),r(),r())
-
-        sample_metadata.append({
-            'node': sample.get('sample_id'),
-            'year': sample["collection_date"].year,
-            'month': '{:02d}'.format(sample["collection_date"].month),
-            'day': '{:02d}'.format(sample["collection_date"].day),
-            'country': "Sweden",
-            'pango': pango_type,
-            'pango__color': pango_color[pango_type],
-            'nextstrain': nextstrain_clade,
-            'nextstrain__color': nextstrain_color[nextstrain_clade],
-            'country__color': "#358"
-        })
-
-    distance = defaultdict(dict)
-
-    for s1 in all_samples:
-        for s2 in all_samples:
-            distance[s1][s2] = 0
-
-    for var_id, samples_with_variant in presence.items():
-        samples_without_variant = all_samples ^ samples_with_variant
-        for s_without in samples_without_variant:
-            for s_with in samples_with_variant:
-                distance[s_without][s_with] += 1
-                distance[s_with][s_without] += 1
-
-    data = []
-    for s in all_samples:
-        data.append(list(distance[s].values()))
-
-    ids = list(all_samples)
-    dm = DistanceMatrix(data, ids)
-    tree = nj(dm)
-
-    microreact_data = {
-        "data": sample_metadata,
-        "name": value,
-        "tree": (tree.root_at_midpoint()),
-        "timeline_grouped": True,
-    }
-    
-    return render_template('nodes.html', data = (microreact_data))
+    # print(tree)
+    # list_dict_tree = (newick_to_cyto(tree))
+    # print(sample_metadata)
+    # print(sample_metadata)
+    return render_template('tree.html', tree=tree, response=response, data=tree)
 
 def get_similar_samples(sample_to_report, all_samples, max_diffs):
 
@@ -450,8 +397,10 @@ def get_similar_samples(sample_to_report, all_samples, max_diffs):
 
 def add_significant_variants(samples):
     lineages_of_concern = app.config["PANGO_LINEAGES_OF_CONCERN"]
-    variants_of_significance = set(app.config["VARIANTS_OF_BIOLOGICAL_SIGNIFICANCE"])
-    positions_of_significance = set(app.config["POSITIONS_OF_BIOLOGICAL_SIGNIFICANCE"])
+    variants_of_significance = set(
+        app.config["VARIANTS_OF_BIOLOGICAL_SIGNIFICANCE"])
+    positions_of_significance = set(
+        app.config["POSITIONS_OF_BIOLOGICAL_SIGNIFICANCE"])
 
     samples_mod = []
     # Add significant variants
@@ -481,6 +430,7 @@ def criteria_is_selected(sample, exclude_criteria):
         return False
 
     return True
+
 
 def pango_per_week(samples, exclude_criteria=None):
     pango_count_per_week = defaultdict(lambda: defaultdict(int))
@@ -540,6 +490,7 @@ def rolling_mean_variant(samples, variant_id):
 
     return variant_per_date
 
+
 def build_sample_query(search_string=None, hidden=False, validation=False, pango=None, mutation=None):
     query = {}
 
@@ -550,7 +501,7 @@ def build_sample_query(search_string=None, hidden=False, validation=False, pango
             query["$and"].append(
                 {'$or': [
                     {'sample_id': {'$regex': part}},
-                    {'pangolin.type': {'$regex':part}},
+                    {'pangolin.type': {'$regex': part}},
                     {'mlu': {'$regex': part}},
                     {'selection_criterion': {'$regex': part}},
                     {'variants.aa': {'$regex': part}},
@@ -565,10 +516,10 @@ def build_sample_query(search_string=None, hidden=False, validation=False, pango
         query["variants.id"] = mutation
 
     if not hidden:
-        query["hidden"] = {'$ne':1}
+        query["hidden"] = {'$ne': 1}
 
     if not validation:
-        query["validation"] = {'$ne':1}
+        query["validation"] = {'$ne': 1}
 
     return query
 
@@ -578,11 +529,12 @@ def one_letter_p(st):
     aa = {'Cys': 'C', 'Asp': 'D', 'Ser': 'S', 'Gln': 'Q', 'Lys': 'K',
           'Ile': 'I', 'Pro': 'P', 'Thr': 'T', 'Phe': 'F', 'Asn': 'N',
           'Gly': 'G', 'His': 'H', 'Leu': 'L', 'Arg': 'R', 'Trp': 'W',
-          'Ala': 'A', 'Val': 'V', 'Glu': 'E', 'Tyr': 'Y', 'Met': 'M', 'Ter': '*' }
+          'Ala': 'A', 'Val': 'V', 'Glu': 'E', 'Tyr': 'Y', 'Met': 'M', 'Ter': '*'}
 
     pattern = re.compile('|'.join(aa.keys()))
     new = pattern.sub(lambda x: aa[x.group()], st)
     return new
+
 
 @app.template_filter()
 def no_transid(nom):
@@ -594,9 +546,10 @@ def no_transid(nom):
 
     return nom
 
+
 @app.template_filter()
 def unesc(st):
-    if( len(st) > 0 ):
+    if(len(st) > 0):
         return urllib.parse.unquote(st)
     else:
         return ""
@@ -606,9 +559,11 @@ def unesc(st):
 def pos_sort(l):
     return sorted(l, key=lambda k: int(k.split('_')[0]))
 
+
 @app.template_filter()
 def dictsort(l, key):
     return sorted(l, key=lambda k: k[key])
+
 
 @app.template_filter()
 def human_date(d):
@@ -625,36 +580,38 @@ def human_date(d):
         return "Yesterday "+d.strftime('%H:%M')
     return d.strftime("%Y-%m-%d %H:%M")
 
+
 @app.template_filter()
 def date_notime(d):
     if d:
         return d.strftime("%Y-%m-%d")
-    else :
+    else:
         return ""
 
 
 @app.template_filter()
 def variant_link(v):
     covariants = {
-        "S:A222V":"20A.EU1", "S:S477N":"20A.EU2", "S:N501Y":"S.N501", "S:E484K":"S.E484",
-        "S:H69_V70del":"S.H69-", "S:N439K":"S.N439K", "S:Y453F":"S.Y453F", "S:S98F":"S.S98F",
-        "S:L452R":"S.L452R", "S:D80Y":"S.D80Y", "S:A626S":"S.A626S", "S:V1122L":"S.V1122L",
-        "S:Q677H":"S.Q677"
+        "S:A222V": "20A.EU1", "S:S477N": "20A.EU2", "S:N501Y": "S.N501", "S:E484K": "S.E484",
+        "S:H69_V70del": "S.H69-", "S:N439K": "S.N439K", "S:Y453F": "S.Y453F", "S:S98F": "S.S98F",
+        "S:L452R": "S.L452R", "S:D80Y": "S.D80Y", "S:A626S": "S.A626S", "S:V1122L": "S.V1122L",
+        "S:Q677H": "S.Q677"
     }
 
     var_show = v
     if v == "S:H69_V70del":
         var_show = "S:H69-"
 
-
     if v in covariants:
         return f"<a href='https://covariants.org/variants/{ covariants[v] }'>{ var_show }</a>"
 
     return v
 
+
 @app.template_filter()
 def pretty(value):
     return json.dumps(json.loads(value), sort_keys=True, indent=4, separators=(',', ': '))
+
 
 @app.template_filter()
 def get_dates(data):
@@ -668,6 +625,7 @@ def get_dates(data):
 
     return dates
 
+
 @app.template_filter()
 def pct_type(data, key):
     pct = []
@@ -676,10 +634,11 @@ def pct_type(data, key):
         for i in data[date].values():
            tot += i
         if tot > 5:
-            selected_count =data[date].get(key, 0)
+            selected_count = data[date].get(key, 0)
             pct.append(selected_count/tot)
 
     return pct
+
 
 @app.template_filter()
 def num_samples_per_date(data):
@@ -705,10 +664,11 @@ def load_user(username):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
-    if request.method == 'POST': # and form.validate_on_submit():
+    if request.method == 'POST':  # and form.validate_on_submit():
         user = app.config['USERS_COLL'].find_one({"_id": form.username.data})
         if user and User.validate_login(user['password'], form.password.data):
-            user_obj = User(user['_id'], user['groups'], user.get('sc2_role','normal'))
+            user_obj = User(user['_id'], user['groups'],
+                            user.get('sc2_role', 'normal'))
             login_user(user_obj)
 
             return redirect(request.args.get("next") or url_for("index"))
@@ -723,97 +683,85 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-#Converts newick formatted data to cytoscape format
+# Converts newick formatted data to cytoscape format
+
+#First solution. Will not be gracious
 def newick_to_cyto(str_newick_data):
-    #Initiates all variables which will be used
-    # list_nodes = list()
-    # list_edges = list()
-    # str_node = ''
-    # bool_start_node, bool_start_edge = False, False
-    # int_depth = 0
-    # str_newick_data = str_newick_data[::-1]
-    # for int_counter, str_char in enumerate(str_newick_data):
-        
-    #     Counts the depth
-    #     if str_char == '(': int_depth += 1
-    #     elif str_char == ')': int_depth -= 1
-
-    #     #Check if the incoming word is an node or edge
-    #     bool_start_node, bool_start_edge = check_if_allowed(str_char, '()'), check_if_allowed(str_char, ':')
-
-    #     if bool_start_node:
-    #         ...
-        
-    ancestors = list()
-    tree = dict()
-    tokens = re.split('/\s*(;|\(|\)|,|:)\s*/' ,str_newick_data)
-
-    for str_token in tokens:
-	    if str_token == '(':
-            subtree = dict()
-            tree['children'] = [subtree]
-            ancestors.append(tree)
-            tree = subtree
-            break
-        elif str_token == ',':
-            subtree = dict()
-            ancestors[len(ancestors)-1]['children'].append(subtree)
-            tree = subtree
-            break
-            
-    return tokens
+    # Initiates all variables which will be used
+    list_nodes = list()
+    dict_edges = dict()
+    dict_nodes = dict()
+    dict_roots = {x:list() for x in range(str_newick_data.count('('))}
+    str_node = ''
+    str_edge = ''
+    list_json_results = list()
 
 
+    bool_start_node, bool_start_edge, bool_finish_branch = False, False, False
+    int_depth = -1
+    for int_counter, str_char in enumerate(str_newick_data):
+
+        # Counts the depth of the branch and if a branch is finished or not
+        if str_char == '(': int_depth += 1
+        elif str_newick_data[int_counter -1] == ')': 
+            int_depth -= 1
+            bool_finish_branch = True
+            str_node = str(int_depth+1)
+
+        #Records a string if it's a node
+        if str_char not in [')',  ',', '('] and not bool_start_edge:
+            if str_char == ':': bool_start_edge = True
+            else: str_node += str_char
+
+        #Records a string if it's an edge
+        elif str_char not in [')',  ',', '('] and bool_start_edge:
+            str_edge += str_char
+
+        #Defines the root for a branch
+        elif bool_finish_branch == True and str_char not in  [')',  ',', '(',' :']:
+            str_edge += str_char
+
+        #Saves the node and the edge into a dictionary and the roots into another
+        elif len(str_node) > 0 and len(str_edge) > 0:
+            dict_nodes[str_node] = str_edge
+            dict_roots[int_depth].append((str_node,str_edge))
+            dict_edges[len(dict_nodes)] = (str_node, int_depth)
+            bool_start_edge, str_node, str_edge = False, '', '' #resets variables
 
 
+    #i: counts the depth of the loops so that each edge gets an unique id
+    i = 0
+    for key in dict_roots:
+        if key not in [x['data']['id'] for x in list_json_results]:
+            list_json_results.append(insert_dict(id=key, group='nodes', classes='root'))
+        i += 1
+        for tuple_node in dict_roots[key]:
+            if isinstance(tuple_node[0], int):
+                list_json_results.append(insert_dict(id=tuple_node[0], group='nodes', classes='root'))
+            else:
+                list_json_results.append(insert_dict(id=tuple_node[0], group='nodes', classes='leaf'))
+            list_json_results.append(insert_dict(id=f'e{i}', group='edges', source=key, target=tuple_node[0], length=tuple_node[1]))
+            i += 1
+    for int_counter, dict_ele in enumerate(list_json_results):
+        if str(dict_ele['data']['id']).isdigit():
+            list_json_results[int_counter]['classes'] = 'root'
+    return list_json_results
 
-	#     switch (token) {
-	# 	    case '(': // new children
-	# 		    var subtree = {};
-	# 		    tree.children = [subtree];
-	# 		    ancestors.push(tree);
-	# 		    tree = subtree;
-	# 		    break;
-	# 	    case ',': // another branch
-	# 			var subtree = {};
-	# 			ancestors[ancestors.length-1].children.push(subtree);
-	# 			tree = subtree;
-	# 			break;
-	# 		case ')': // optional name next
-	# 			tree = ancestors.pop();
-	# 			break;
-	# 		case ':': // optional length next
-	# 			break;
-	# 		default:
-	# 			x = tokens[i-1];
-	# 			if (x == ')' or x == '(' or x == ',') {
-	# 				tree.name = token;
-	# 			} else if (x == ':') {
-	# 				tree.branch_length = parseFloat(token);
-	# 			}
-	# 	}
-	# }
-    # list_newick = re.split('\(|\)' ,str_newick_data)
-    
-
-    # list_newick = list(filter(len, list_newick))
-
-    # #Gets all nodes
-    # for str_newick in list_newick:
-    #     if ',' in str_newick: 
-    #         str_newick =  str_newick.split(',')
-    #         str_newick = (list(filter(len, str_newick)))
-    #         for el in str_newick:
-    #             list_nodes.append(el[0])
-    #     else:
-    #         list_nodes.append(str_newick[0])
-
-
-    return str_newick_data
-
-def check_if_allowed(str_char, str_forbidden_chars):
-    return str_char not in str_forbidden_chars and str_char != ','
-
-str_newick = '((B:0.2,(C:0.3,D:0.4)E:0.5)F:0.1)A;'
-
-print(newick_to_cyto(str_newick))
+def insert_dict(id=None, group='nodes', classes='leaf', source=None, target=None, length=None):
+    if group == 'edges':
+        return {
+                    "data":{
+                        "id":id,
+                        "source": source,
+                        "target": target,
+                        "weight":int(float(length))
+                        }}
+    else:
+        return{
+                "data":
+                {
+                    "id":id
+                }, 
+                "group":group,
+                "classes":classes
+            }
