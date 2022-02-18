@@ -11,14 +11,16 @@ First clone the repo and then you have two options:
   * Development
   * Production
 
-For production simply run:
+## Production
 
 ```bash
 docker-compose up
 ```
 and it should spin up. However, configuration of deployment variables is probably needed
 
-For development run an arbitrary mongodb docker.
+## Development
+
+Run an arbitrary mongodb docker.
 
 Then create a virtual environment install the requirements. Note that scikit-bio package must be built manually when installing on an arm architecture computer.
 Also, gunicorn is required to run the sc2reporter app.
