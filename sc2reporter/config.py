@@ -1,11 +1,15 @@
 from pymongo import MongoClient
-
+print('Config is opened.')
 WTF_CSRF_ENABLED = True
 SECRET_KEY = 'frusklimuna4satass5h5'
 
 QC_MAX_PCT_N = 10
-DB_NAME = 'sarscov2'
-DATABASE = MongoClient('mongodb://mongo:27017/')[DB_NAME]
+DB_NAME = 'sarscov2_standalone'
+
+
+CLIENT = MongoClient()
+
+DATABASE = CLIENT[DB_NAME]
 SAMPLE_COLL = DATABASE.sample
 VARIANT_COLL = DATABASE.variant
 DEPTH_COLL = DATABASE.depth

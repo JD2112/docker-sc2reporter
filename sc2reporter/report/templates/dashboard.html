@@ -68,7 +68,7 @@
 	<tr><th></th><th></th></tr>
       </thead>
       <tr>
-	<td>Total samples with passed QC</td><td>{{ samples.count() }} (<a href="{{ url_for('create_tree', group='all', value='All') }}">microreact</a>)</td>
+	<td>Total samples with passed QC</td><td>{{ samples.count_documents }} (<a href="{{ url_for('create_tree', group='all', value='All') }}">microreact</a>)</td>
       </tr>
       <tr>
 	<td>Total failed samples</td><td>{{failed_samples }}</td>
@@ -77,7 +77,7 @@
 	<td>Number of pango types detect</td><td>{{pango_total_counts.keys()|count}}</td>
       </tr>
       <tr>
-	<td>Number of unique mutations detect</td><td>{{variants.count()}}</td>
+	<td>Number of unique mutations detect</td><td>{{variants.count_documents}}</td>
       </tr>
     </table>
     
