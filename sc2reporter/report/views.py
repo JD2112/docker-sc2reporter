@@ -1,10 +1,9 @@
 from flask_pymongo import PyMongo
-from report import app, api
+from report import app
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, jsonify, send_from_directory, make_response, escape
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 import json
 from bson.objectid import ObjectId
-from flask_restful import Resource, Api
 import pprint
 from collections import defaultdict
 import re
@@ -19,7 +18,7 @@ import random
 from report.forms import LoginForm
 from report.user import User
 from operator import itemgetter
-
+from random import randint
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
@@ -344,16 +343,11 @@ def create_tree(group, value):
         "tree": str(tree),
         "timeline_grouped": True,
     }
-    response = requests.post('https://microreact.org/api/project/', headers={
-                             'Content-type': 'application/json; charset=UTF-8'}, data=json.dumps(microreact_data))
-
-    if response.ok:
-        return redirect(json.loads(response.content)["url"])
     # print(tree)
     # list_dict_tree = (newick_to_cyto(tree))
     # print(sample_metadata)
     # print(sample_metadata)
-    return render_template('tree.html', tree=tree, response=response, data=tree)
+    return render_template('tree.html', tree=tree)
 
 def get_similar_samples(sample_to_report, all_samples, max_diffs):
 
@@ -694,7 +688,7 @@ def newick_to_cyto(str_newick_data):
     dict_roots = {x:list() for x in range(str_newick_data.count('('))}
     str_node = ''
     str_edge = ''
-    list_json_results = list()
+    list_json_results = {'nodes':[], 'links':[]}
 
 
     bool_start_node, bool_start_edge, bool_finish_branch = False, False, False
@@ -730,38 +724,41 @@ def newick_to_cyto(str_newick_data):
 
 
     #i: counts the depth of the loops so that each edge gets an unique id
+
     i = 0
     for key in dict_roots:
-        if key not in [x['data']['id'] for x in list_json_results]:
-            list_json_results.append(insert_dict(id=key, group='nodes', classes='root'))
+        if key not in [x['id'] for x in list_json_results['links']] and key not in [x['id'] for x in list_json_results['nodes']]:
+            list_json_results['nodes'].append(insert_dict(id=key, group='nodes', classes='root'))
         i += 1
         for tuple_node in dict_roots[key]:
             if isinstance(tuple_node[0], int):
-                list_json_results.append(insert_dict(id=tuple_node[0], group='nodes', classes='root'))
+                list_json_results['nodes'].append(insert_dict(id=tuple_node[0], group='nodes', classes='root'))
             else:
-                list_json_results.append(insert_dict(id=tuple_node[0], group='nodes', classes='leaf'))
-            list_json_results.append(insert_dict(id=f'e{i}', group='edges', source=key, target=tuple_node[0], length=tuple_node[1]))
+                list_json_results['nodes'].append(insert_dict(id=tuple_node[0], group='nodes', classes='leaf'))
+            list_json_results['links'].append(insert_dict(id=f'e{i}', group='links', source=key, target=tuple_node[0], length=tuple_node[1]))
             i += 1
-    for int_counter, dict_ele in enumerate(list_json_results):
-        if str(dict_ele['data']['id']).isdigit():
-            list_json_results[int_counter]['classes'] = 'root'
+    # for int_counter, dict_ele in enumerate(list_json_results['nodes']):
+        # if str(dict_ele['id']).isdigit():
+        #     list_json_results['nodes'][int_counter]['classes'] = 'root'
+    pprint.pprint(list_json_results)
     return list_json_results
 
 def insert_dict(id=None, group='nodes', classes='leaf', source=None, target=None, length=None):
-    if group == 'edges':
+    if group == 'links':
         return {
-                    "data":{
+                    # "data":{
                         "id":id,
                         "source": source,
                         "target": target,
-                        "weight":int(float(length))
-                        }}
+                        "value": randint(0,100000)
+                        # }
+                        }
     else:
         return{
-                "data":
-                {
+                # "data":
+                # {
                     "id":id
-                }, 
-                "group":group,
-                "classes":classes
-            }
+                }
+                # "group":group,
+                # "classes":classes
+            # }

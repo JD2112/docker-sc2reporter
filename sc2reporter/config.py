@@ -17,6 +17,7 @@ USERS_COLL = DATABASE.users
 
 DEBUG = True
 
+PROPAGATE_EXCEPTIONS = False
 
 PANGO_LINEAGES_OF_CONCERN = ["B.1.351","P.1","A.23.1","B.1.525","B.1.1.28.1","B.1.427", "B.1.429", "B.1.617"] # Removed B.1.1.7
 
