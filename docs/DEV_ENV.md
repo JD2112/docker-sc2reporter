@@ -29,9 +29,13 @@ Then enter "Test" for every required input demanded by the python script.
 We will now start the application using gunicorn like so:
 ```
 cd ../sc2reporter/
+# --reload command insures that server updates every time a change is saved
 gunicorn --reload sc2reporter:application
 ```
 We should now have a working application at port localhost:8000
 
 # Notes
 You will have to insert the virus data yourself into the database.
+
+Right now the log in function automatically enters a user with Test in all field.
+If the Test user isn't in the database, the application won't work.
