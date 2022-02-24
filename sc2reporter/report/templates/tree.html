@@ -3,13 +3,9 @@
 {% block body %} -->
 <html>
 <head>
-<script src="https://cdn.jsdelivr.net/npm/d3-dispatch@3"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-quadtree@3"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-timer@3"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-force@3"></script>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="{{url_for('static', filename='d3.phylogram.js')}}"></script>
-<script src="{{url_for('static', filename='newick.js')}}"></script>
+<script src="{{url_for('static', filename='newickToGraphML.js')}}"></script>
 <style>
 /* HTML styles */
 /* html{ width: 100%; } */
@@ -38,45 +34,19 @@ svg {
 <svg></svg>
 
 <script>
-tree = '{{ tree}}'
 
-tree = (Newick.parse(tree))
 
-edgesAndNodes = {"nodes":[], "edges": []}
-undiscoveredBranchsets = []
+tree = '{{ tree }}'
 
-depth = 0
+data = (Newick.parse(tree))
 
-function insertNode(name){
-  edgesAndNodes['nodes'].push({'Name':name})
-}
-function insertEdge(source, target, length){
-  edgesAndNodes['edges'].push({"source":source, "target":target, "length":length})
-}
 
-function parseBranchSet(branchset, depth){
-  branchsets = []
 
-  if (branchset['name'] === ''){
-    insertNode(depth)
-  }
-  
-  for (leaf in branchset['branchset']){
-    insertEdge(source = depth, target = branchset['branchset'][leaf]['name'], length =branchset['branchset'][leaf]['length'] )
-    if (branchset['branchset'][leaf]['name'] != ''){
-      insertNode(branchset['branchset'][leaf]['name'])
-    }else{
-      branchsets.push(branchset['branchset'][leaf])
-    }
-  }
-  return branchsets
-}
-while (true) {
-  parseBranchSet(tree, depth)
-  depth = depth +1
-  break
-}
-console.log(edgesAndNodes)
+console.log(data)
+data['links'].push({'source':'3', 'target':'4'})
+data['links'].push({'source':'5', 'target':'6'})
+drawGraph(data)
+
 </script>
 
 </body>
