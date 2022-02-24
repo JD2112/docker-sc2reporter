@@ -343,7 +343,7 @@ def create_tree(group, value):
         "tree": str(tree),
         "timeline_grouped": True,
     }
-    # print(tree)
+    print(tree)
     # list_dict_tree = (newick_to_cyto(tree))
     # print(sample_metadata)
     # print(sample_metadata)
