@@ -15,7 +15,7 @@ var graph;
 //////////// FORCE SIMULATION //////////// 
 
 // force simulator
-var simulation = d3.forceSimulation();
+var simulation = d3.forceSimulation()
 
 // set up the simulation and event to update locations after each tick
 function initializeSimulation() {
@@ -32,9 +32,9 @@ forceProperties = {
     },
     charge: {
         enabled: true,
-        strength: -30,
+        strength: -20,
         distanceMin: 1,
-        distanceMax: 2000
+        distanceMax: 200
     },
     collide: {
         enabled: true,
@@ -55,7 +55,7 @@ forceProperties = {
     link: {
         enabled: true,
         distance: 30,
-        iterations: 1
+        iterations: 10
     }
 }
 
@@ -63,12 +63,15 @@ forceProperties = {
 function initializeForces() {
     // add forces and associate each with a name
     simulation
-        .force("link", d3.forceLink())
+        // .force("link", d3.forceLink().distance(function(d){return d.value;}))
+        // .force("link", d3.forceLink().distance(function(d) {return d.value;}).strength(0.10))
+        // .force("link", d3.forceLink().distance(function(d) {return d.distance;}).strength(1))
+        .force("link", d3.forceLink().distance(function(d) {
+            return d.value;
+          }).strength(1))
         .force("charge", d3.forceManyBody())
-        .force("collide", d3.forceCollide())
         .force("center", d3.forceCenter())
-        .force("forceX", d3.forceX())
-        .force("forceY", d3.forceY());
+        .force("forceX", d3.forceX());
     // apply properties to each of the forces
     updateForces();
 }
@@ -83,16 +86,9 @@ function updateForces() {
         .strength(forceProperties.charge.strength * forceProperties.charge.enabled)
         .distanceMin(forceProperties.charge.distanceMin)
         .distanceMax(forceProperties.charge.distanceMax);
-    simulation.force("collide")
-        .strength(forceProperties.collide.strength * forceProperties.collide.enabled)
-        .radius(forceProperties.collide.radius)
-        .iterations(forceProperties.collide.iterations);
     simulation.force("forceX")
         .strength(forceProperties.forceX.strength * forceProperties.forceX.enabled)
         .x(width * forceProperties.forceX.x);
-    simulation.force("forceY")
-        .strength(forceProperties.forceY.strength * forceProperties.forceY.enabled)
-        .y(height * forceProperties.forceY.y);
     simulation.force("link")
         .id(function(d) {return d.id;})
         .distance(forceProperties.link.distance)
@@ -107,6 +103,46 @@ function updateForces() {
 
 
 //////////// DISPLAY ////////////
+
+var myColor = d3.scaleSequential()
+    .interpolator(d3.interpolateInferno)
+    .domain([1,100])
+
+// Mouse over functions
+var Tooltip = d3.select('svg')
+    .append("div")
+    .style("opacity", 0)
+    .attr("class", "tooltip")
+    .style("background-color", "white")
+    .style("border", "solid")
+    .style("border-width", "2px")
+    .style("border-radius", "5px")
+    .style("padding", "5px")
+    
+    
+var mouseover = function(d) {
+    Tooltip
+      .style("opacity", 1)
+    d3.select(this)
+      .style("stroke", "black")
+      .style("opacity", 1)
+  }
+  var mousemove = function(d) {
+    Tooltip
+      .html("The exact value of<br>this cell is: " + d.id)
+      .style("left", (d3.mouse(this)[0]+70) + "px")
+      .style("top", (d3.mouse(this)[1]) + "px")
+  }
+  var mouseleave = function(d) {
+    Tooltip
+      .style("opacity", 0)
+    // d3.select(this)
+    //   .style("stroke", "none")
+    //   .style("opacity", 0.8)
+  }
+  var myColor = d3.scaleSequential()
+    .interpolator(d3.interpolateInferno)
+    .domain([1,100])
 
 // generate the svg objects and force simulation
 function initializeDisplay() {
@@ -123,10 +159,16 @@ function initializeDisplay() {
     .selectAll("circle")
     .data(graph.nodes)
     .enter().append("circle")
+        .style("fill", function(d) { return myColor(d.value)} )
+        .attr("r", function(d) { return d.size; })
         .call(d3.drag()
             .on("start", dragstarted)
             .on("drag", dragged)
-            .on("end", dragended));
+            .on("end", dragended))
+        .on("click", (d) => {console.log(d.id)})
+        .on("mouseover", mouseover)
+        .on("mousemove", mousemove)
+        .on("mouseleave", mouseleave)
 
   // node tooltip
   node.append("title")
@@ -138,7 +180,7 @@ function initializeDisplay() {
 // update the display based on the forces (but not positions)
 function updateDisplay() {
     node
-        .attr("r", forceProperties.collide.radius)
+        // .attr("r", forceProperties.collide.radius)
         .attr("stroke", forceProperties.charge.strength > 0 ? "blue" : "red")
         .attr("stroke-width", forceProperties.charge.enabled==false ? 0 : Math.abs(forceProperties.charge.strength)/15);
 
