@@ -32,7 +32,7 @@ forceProperties = {
     },
     charge: {
         enabled: true,
-        strength: -20,
+        strength: -30,
         distanceMin: 1,
         distanceMax: 200
     },
@@ -55,7 +55,7 @@ forceProperties = {
     link: {
         enabled: true,
         distance: 30,
-        iterations: 10
+        iterations: 300
     }
 }
 
@@ -63,16 +63,17 @@ forceProperties = {
 function initializeForces() {
     // add forces and associate each with a name
     simulation
-        // .force("link", d3.forceLink().distance(function(d){return d.value;}))
-        // .force("link", d3.forceLink().distance(function(d) {return d.value;}).strength(0.10))
-        // .force("link", d3.forceLink().distance(function(d) {return d.distance;}).strength(1))
+
         .force("link", d3.forceLink().distance(function(d) {
             return d.value;
-          }).strength(1))
+          }).strength(0.01))
         .force("charge", d3.forceManyBody())
         .force("center", d3.forceCenter())
         .force("forceX", d3.forceX());
     // apply properties to each of the forces
+    function linkDistance(d) {
+        return d.value;
+    }
     updateForces();
 }
 
@@ -91,7 +92,9 @@ function updateForces() {
         .x(width * forceProperties.forceX.x);
     simulation.force("link")
         .id(function(d) {return d.id;})
-        .distance(forceProperties.link.distance)
+        // .force("link", d3.forceLink().distance(function(d){return d.value;}))
+        // .distance(forceProperties.link.distance)
+        .distance(function(d){return d.value;})
         .iterations(forceProperties.link.iterations)
         .links(forceProperties.link.enabled ? graph.links : []);
 
@@ -180,7 +183,6 @@ function initializeDisplay() {
 // update the display based on the forces (but not positions)
 function updateDisplay() {
     node
-        // .attr("r", forceProperties.collide.radius)
         .attr("stroke", forceProperties.charge.strength > 0 ? "blue" : "red")
         .attr("stroke-width", forceProperties.charge.enabled==false ? 0 : Math.abs(forceProperties.charge.strength)/15);
 

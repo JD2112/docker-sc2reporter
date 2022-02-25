@@ -99,8 +99,8 @@ Continued on by https://github.com/Fattigman to convert tree format to graphml J
         return Math.floor(Math.random() * (max - min) ) + min;
       }
       //Inserts nodes and edges into the json object
-      function insertNode(name){
-        edgesAndNodes['nodes'].push({'id':name.toString(), 'value':100, 'size':getRndInteger(5,10)})
+      function insertNode(name, size){
+        edgesAndNodes['nodes'].push({'id':name.toString(), 'value':100, 'size':size})
       }
       function insertEdge(source, target, length){
         edgesAndNodes['links'].push({"source":source.toString(), "target":target.toString(), "value":length})
@@ -111,7 +111,7 @@ Continued on by https://github.com/Fattigman to convert tree format to graphml J
       function parseBranchSet(branchset, depth){
         branches = []
         if (branchset['name'] === ''){
-          insertNode(depth)
+          insertNode(depth, 0)
         }
         for (leaf in branchset['branchset']){
           if (branchset['branchset'][leaf]['name'] == ''){
@@ -122,7 +122,7 @@ Continued on by https://github.com/Fattigman to convert tree format to graphml J
           }
           insertEdge(source = depth, target = target, length =branchset['branchset'][leaf]['length'] )
           if (branchset['branchset'][leaf]['name'] != ''){
-            insertNode(branchset['branchset'][leaf]['name'])
+            insertNode(branchset['branchset'][leaf]['name'], 7)
           }else{
             
             // branchset['branchset'][leaf]['name'] = newDepth.toString()

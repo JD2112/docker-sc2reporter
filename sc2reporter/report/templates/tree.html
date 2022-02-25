@@ -6,43 +6,17 @@
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="{{url_for('static', filename='d3.phylogram.js')}}"></script>
 <script src="{{url_for('static', filename='newickToGraphML.js')}}"></script>
-<style>
-/* HTML styles */
-/* html{ width: 100%; } */
-body{ 
-  width: 100%; 
-  margin: 0; padding: 0; 
-  display: flex; 
-  font-family: sans-serif; font-size: 75%; }
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='treeStyle.css') }}">
 
-/* SVG styles */
-svg {
-  flex-basis: 100%;
-  /* width: 100%; */
-  min-width: 200px;
-}
-.links line {
-  stroke: #aaa;
-}
-.nodes circle {
-  pointer-events: all;
-}
-
-</style>
 </head>
 <body>
 <svg></svg>
 
 <script>
-
-
 tree = '{{ tree }}'
-
 data = (Newick.parse(tree))
 
-
-
-console.log(data)
+// console.log(data)
 data['links'].push({'source':'3', 'target':'4'})
 data['links'].push({'source':'5', 'target':'6'})
 drawGraph(data)
