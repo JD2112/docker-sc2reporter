@@ -34,12 +34,12 @@ forceProperties = {
         enabled: true,
         strength: -30,
         distanceMin: 1,
-        distanceMax: 200
+        distanceMax: 2000
     },
     collide: {
         enabled: true,
         strength: .7,
-        iterations: 1,
+        iterations: 10,
         radius: 5
     },
     forceX: {
@@ -79,6 +79,9 @@ function initializeForces() {
 
 // apply new force properties
 function updateForces() {
+    function linkDistance(d) {
+        return d.value;
+    }
     // get each force by name and update the properties
     simulation.force("center")
         .x(width * forceProperties.center.x)
@@ -92,11 +95,13 @@ function updateForces() {
         .x(width * forceProperties.forceX.x);
     simulation.force("link")
         .id(function(d) {return d.id;})
-        // .force("link", d3.forceLink().distance(function(d){return d.value;}))
         // .distance(forceProperties.link.distance)
-        .distance(function(d){return d.value;})
+        .distance((d)=> {return 30})
+        // .distance(linkDistance).strength(0.1)
+        // .distance((d)=> {return d.value})
         .iterations(forceProperties.link.iterations)
         .links(forceProperties.link.enabled ? graph.links : []);
+        
 
     // updates ignored until this is run
     // restarts the simulation (important if simulation has already slowed down)
@@ -172,6 +177,7 @@ function initializeDisplay() {
         .on("mouseover", mouseover)
         .on("mousemove", mousemove)
         .on("mouseleave", mouseleave)
+        .text(function(d) { return d.id; });
 
   // node tooltip
   node.append("title")
