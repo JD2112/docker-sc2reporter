@@ -15,6 +15,8 @@ body{
   .links line {
     stroke: #aaa;
   }
-  .nodes circle {
+  .nodes{
     pointer-events: all;
+    border: black;
+    border-radius: 0.5px;
   }
