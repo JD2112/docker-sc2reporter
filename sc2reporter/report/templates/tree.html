@@ -5,7 +5,6 @@
 <head>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="{{url_for('static', filename='d3.phylogram.js')}}"></script>
-<script src="{{url_for('static', filename='newickToGraphML.js')}}"></script>
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='treeStyle.css') }}">
 
 </head>
@@ -14,16 +13,7 @@
 
 <script>
 tree = {{ tree|safe }};
-// data = (Newick.parse(tree))
-
-
-// console.log(tree)
-// console.log(data)
-// data['links'].push({'source':'3', 'target':'4', 'value':4})
-// data['links'].push({'source':'5', 'target':'6','value':4})
 drawGraph(tree)
-console.log(tree)
-
 </script>
 
 </body>
