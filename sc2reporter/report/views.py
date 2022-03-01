@@ -22,7 +22,7 @@ from random import randint
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
-
+from pprint import pprint
 
 @app.route('/', methods=['GET'])
 @login_required
@@ -343,7 +343,7 @@ def create_tree(group, value):
         "tree": str(tree),
         "timeline_grouped": True,
     }
-    print(tree)
+    tree = n2json(tree)
     # list_dict_tree = (newick_to_cyto(tree))
     # print(sample_metadata)
     # print(sample_metadata)
@@ -679,86 +679,53 @@ def logout():
 
 # Converts newick formatted data to cytoscape format
 
-#First solution. Will not be gracious
-def newick_to_cyto(str_newick_data):
-    # Initiates all variables which will be used
-    list_nodes = list()
-    dict_edges = dict()
-    dict_nodes = dict()
-    dict_roots = {x:list() for x in range(str_newick_data.count('('))}
-    str_node = ''
-    str_edge = ''
-    list_json_results = {'nodes':[], 'links':[]}
-
-
-    bool_start_node, bool_start_edge, bool_finish_branch = False, False, False
-    int_depth = -1
-    for int_counter, str_char in enumerate(str_newick_data):
-
-        # Counts the depth of the branch and if a branch is finished or not
-        if str_char == '(': int_depth += 1
-        elif str_newick_data[int_counter -1] == ')': 
-            int_depth -= 1
-            bool_finish_branch = True
-            str_node = str(int_depth+1)
-
-        #Records a string if it's a node
-        if str_char not in [')',  ',', '('] and not bool_start_edge:
-            if str_char == ':': bool_start_edge = True
-            else: str_node += str_char
-
-        #Records a string if it's an edge
-        elif str_char not in [')',  ',', '('] and bool_start_edge:
-            str_edge += str_char
-
-        #Defines the root for a branch
-        elif bool_finish_branch == True and str_char not in  [')',  ',', '(',' :']:
-            str_edge += str_char
-
-        #Saves the node and the edge into a dictionary and the roots into another
-        elif len(str_node) > 0 and len(str_edge) > 0:
-            dict_nodes[str_node] = str_edge
-            dict_roots[int_depth].append((str_node,str_edge))
-            dict_edges[len(dict_nodes)] = (str_node, int_depth)
-            bool_start_edge, str_node, str_edge = False, '', '' #resets variables
-
-
-    #i: counts the depth of the loops so that each edge gets an unique id
-
-    i = 0
-    for key in dict_roots:
-        if key not in [x['id'] for x in list_json_results['links']] and key not in [x['id'] for x in list_json_results['nodes']]:
-            list_json_results['nodes'].append(insert_dict(id=key, group='nodes', classes='root'))
-        i += 1
-        for tuple_node in dict_roots[key]:
-            if isinstance(tuple_node[0], int):
-                list_json_results['nodes'].append(insert_dict(id=tuple_node[0], group='nodes', classes='root'))
-            else:
-                list_json_results['nodes'].append(insert_dict(id=tuple_node[0], group='nodes', classes='leaf'))
-            list_json_results['links'].append(insert_dict(id=f'e{i}', group='links', source=key, target=tuple_node[0], length=tuple_node[1]))
-            i += 1
-    # for int_counter, dict_ele in enumerate(list_json_results['nodes']):
-        # if str(dict_ele['id']).isdigit():
-        #     list_json_results['nodes'][int_counter]['classes'] = 'root'
-    pprint.pprint(list_json_results)
-    return list_json_results
-
-def insert_dict(id=None, group='nodes', classes='leaf', source=None, target=None, length=None):
-    if group == 'links':
-        return {
-                    # "data":{
-                        "id":id,
-                        "source": source,
-                        "target": target,
-                        "value": randint(0,100000)
-                        # }
-                        }
-    else:
-        return{
-                # "data":
-                # {
-                    "id":id
-                }
-                # "group":group,
-                # "classes":classes
-            # }
+def n2json(text):
+    #input format (newick):
+    #(A:0.1,B:0.2,(C:0.3,D:0.4):0.5);
+    #returns:
+    #{'links':[
+    #       {'source': 0, 'target': 'A', 'value': '0.1'},
+    #       {'source': 0, 'target': 'B', 'value': '0.2'},
+    #       {'source': 1, 'target': 'C', 'value': '0.3'},
+    #       {'source': 1, 'target': 'D', 'value': '0.4'},
+    #       {'source': 0, 'target': 1, 'value': '0.5'}],
+    #'nodes':[
+    #       {'id': 0, 'size': 0, 'value': 100},
+    #       {'id': 'A', 'size': 3, 'value': 100},
+    #       {'id': 'B', 'size': 3, 'value': 100},
+    #       {'id': 1, 'size': 0, 'value': 100},
+    #       {'id': 'C', 'size': 3, 'value': 100},
+    #       {'id': 'D', 'size': 3, 'value': 100}]}
+    graph = {'links':[], 'nodes':[]}
+    num_root = 0 #Defines which root is used
+    special_chars = '(),:' #Characters that are used as grammar in newick
+    text = text.replace(' ', '') #Removes whitespace
+    for counter, char in enumerate(text):
+        #Branch begins
+        if char == '(':
+            graph['nodes'].append({'id':num_root, 'size':0,'value':100})
+            num_root += 1
+        #Branch ends
+        elif char == ')' and num_root != 1:
+            num_root -= 1
+            dist = text[counter:].split(')')[1][1:]
+            #graph['edges'].append({'s':num_root-1, 't':num_root, 'val':dist})
+       
+        #Check if it's a leaf
+        elif char not in special_chars and text[counter-1] in '(,':
+            _id = text[counter:].split(':')[0].replace('(','')
+            size = 3
+            if {'id':_id, 'size':size,'value':100} not in graph['nodes']:
+                graph['nodes'].append({'id':_id, 'size':size,'value':100})
+       
+        #Check if it's an edge
+        elif char not in special_chars and text[counter-1] in ':':
+            res = re.split( ',|\)', text[counter:])[0]
+            #Checks if its root edge or node edge
+            if text[counter-2] in ')':#root
+                s, t = num_root-1, num_root
+            else:#leaf
+                s, t = num_root-1, str(graph['nodes'][-1]['id']).replace('(','')
+            if res == 0: res = 0.5
+            graph['links'].append({'value':res, 'source':s, 'target':t})
+    return graph
