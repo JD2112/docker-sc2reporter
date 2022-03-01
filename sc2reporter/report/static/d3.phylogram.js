@@ -1,12 +1,15 @@
 function  drawGraph(data){
+//selects a svg elements from the html page which it binds to
   var svg = d3.select("svg"),
     width = +svg.node().getBoundingClientRect().width,
     height = +svg.node().getBoundingClientRect().height;
 
 // svg objects
-var link, node;
+var links = data.links, 
+    nodes = data.nodes,
+    bilinks = [];
 // the data - an object with nodes and links
-var graph;
+var graph = data;
 
 
 
@@ -32,14 +35,14 @@ forceProperties = {
     },
     charge: {
         enabled: true,
-        strength: -30,
+        strength: -500,
         distanceMin: 1,
         distanceMax: 2000
     },
     collide: {
         enabled: true,
         strength: .7,
-        iterations: 10,
+        iterations: 100,
         radius: 5
     },
     forceX: {
@@ -55,7 +58,7 @@ forceProperties = {
     link: {
         enabled: true,
         distance: 30,
-        iterations: 300
+        iterations: 10
     }
 }
 
@@ -63,25 +66,18 @@ forceProperties = {
 function initializeForces() {
     // add forces and associate each with a name
     simulation
-
-        .force("link", d3.forceLink().distance(function(d) {
-            return d.value;
-          }).strength(0.01))
-        .force("charge", d3.forceManyBody())
-        .force("center", d3.forceCenter())
-        .force("forceX", d3.forceX());
+    .force("link", d3.forceLink().distance(function(d) {return d.value;}).strength(1))
+    .force("charge", d3.forceManyBody())
+    .force("center", d3.forceCenter())
+    .force("forceX", d3.forceX());
     // apply properties to each of the forces
-    function linkDistance(d) {
-        return d.value;
-    }
+    
     updateForces();
 }
 
 // apply new force properties
 function updateForces() {
-    function linkDistance(d) {
-        return d.value;
-    }
+
     // get each force by name and update the properties
     simulation.force("center")
         .x(width * forceProperties.center.x)
@@ -94,11 +90,15 @@ function updateForces() {
         .strength(forceProperties.forceX.strength * forceProperties.forceX.enabled)
         .x(width * forceProperties.forceX.x);
     simulation.force("link")
-        .id(function(d) {return d.id;})
-        // .distance(forceProperties.link.distance)
-        .distance((d)=> {return 30})
-        // .distance(linkDistance).strength(0.1)
-        // .distance((d)=> {return d.value})
+        .id(function(d) {
+            return d.id;
+        })
+        .distance((d)=>{
+            // if (Number.isInteger(d.value)){return d.value*100000}
+            // else{return 10}
+            return d.value*20
+        })
+            .strength(1)
         .iterations(forceProperties.link.iterations)
         .links(forceProperties.link.enabled ? graph.links : []);
         
@@ -112,42 +112,6 @@ function updateForces() {
 
 //////////// DISPLAY ////////////
 
-var myColor = d3.scaleSequential()
-    .interpolator(d3.interpolateInferno)
-    .domain([1,100])
-
-// Mouse over functions
-var Tooltip = d3.select('svg')
-    .append("div")
-    .style("opacity", 0)
-    .attr("class", "tooltip")
-    .style("background-color", "white")
-    .style("border", "solid")
-    .style("border-width", "2px")
-    .style("border-radius", "5px")
-    .style("padding", "5px")
-    
-    
-var mouseover = function(d) {
-    Tooltip
-      .style("opacity", 1)
-    d3.select(this)
-      .style("stroke", "black")
-      .style("opacity", 1)
-  }
-  var mousemove = function(d) {
-    Tooltip
-      .html("The exact value of<br>this cell is: " + d.id)
-      .style("left", (d3.mouse(this)[0]+70) + "px")
-      .style("top", (d3.mouse(this)[1]) + "px")
-  }
-  var mouseleave = function(d) {
-    Tooltip
-      .style("opacity", 0)
-    // d3.select(this)
-    //   .style("stroke", "none")
-    //   .style("opacity", 0.8)
-  }
   var myColor = d3.scaleSequential()
     .interpolator(d3.interpolateInferno)
     .domain([1,100])
@@ -155,43 +119,38 @@ var mouseover = function(d) {
 // generate the svg objects and force simulation
 function initializeDisplay() {
   // set the data and properties of link lines
-  link = svg.append("g")
-        .attr("class", "links")
-    .selectAll("line")
-    .data(graph.links)
-    .enter().append("line");
-
-  // set the data and properties of node circles
-  node = svg.append("g")
-        .attr("class", "nodes")
-    .selectAll("circle")
-    .data(graph.nodes)
-    .enter().append("circle")
+    link = svg.selectAll(".link")
+        .data(links)
+        .enter().append("line")
+        .style("stroke", "#6b7071") //gunmetal grey
+        .attr("class", "link")
+        .attr("fill", "none")
+//set the node data style and functions
+    node = svg.selectAll(".node")
+        .data(nodes.filter(function(d) {
+        return d.id;
+        }))
+        .enter().append("circle")
+        .attr("class", "node")
+        //change circle size according to new function
+        //Will
+        .attr("r", function(d) {
+        return d.size*2
+        })
         .style("fill", function(d) { return myColor(d.value)} )
-        .attr("r", function(d) { return d.size; })
+        .style("stroke", "#000000")
+        //.style("stroke", function(d) { return color(d.group); })
         .call(d3.drag()
-            .on("start", dragstarted)
-            .on("drag", dragged)
-            .on("end", dragended))
-        .on("click", (d) => {console.log(d.id)})
-        .on("mouseover", mouseover)
-        .on("mousemove", mousemove)
-        .on("mouseleave", mouseleave)
-        .text(function(d) { return d.id; });
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended))
+        .on("click", (d)=>{console.log(d.id)})
 
-  // node tooltip
-  node.append("title")
-      .text(function(d) { return d.id; });
-  // visualize the graph
   updateDisplay();
 }
 
 // update the display based on the forces (but not positions)
 function updateDisplay() {
-    node
-        .attr("stroke", forceProperties.charge.strength > 0 ? "blue" : "red")
-        .attr("stroke-width", forceProperties.charge.enabled==false ? 0 : Math.abs(forceProperties.charge.strength)/15);
-
     link
         .attr("stroke-width", forceProperties.link.enabled ? 1 : .5)
         .attr("opacity", forceProperties.link.enabled ? 1 : 0);
@@ -245,8 +204,6 @@ function updateAll() {
     updateDisplay();
 }
 
-// load the data
-graph = data;
 initializeDisplay();
 initializeSimulation();
 
