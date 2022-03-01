@@ -13,13 +13,16 @@
 <svg></svg>
 
 <script>
-tree = '{{ tree }}'
-data = (Newick.parse(tree))
+tree = {{ tree|safe }};
+// data = (Newick.parse(tree))
 
+
+// console.log(tree)
 // console.log(data)
-data['links'].push({'source':'3', 'target':'4'})
-data['links'].push({'source':'5', 'target':'6'})
-drawGraph(data)
+// data['links'].push({'source':'3', 'target':'4', 'value':4})
+// data['links'].push({'source':'5', 'target':'6','value':4})
+drawGraph(tree)
+console.log(tree)
 
 </script>
 
