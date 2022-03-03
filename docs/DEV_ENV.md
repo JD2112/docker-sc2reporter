@@ -1,4 +1,4 @@
-# Usage guide for development
+# Installation guide for development
 
 In order to run the application first clone the project:
 ```bash
