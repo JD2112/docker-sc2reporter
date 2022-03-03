@@ -3,7 +3,7 @@
 {% block body %} -->
 <html>
 <head>
-<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="{{url_for('static', filename='d3.v4.min.js')}}"></script>
 <script src="{{url_for('static', filename='d3.phylogram.js')}}"></script>
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='treeStyle.css') }}">
 
@@ -13,6 +13,7 @@
 
 <script>
 tree = {{ tree|safe }};
+console.log(tree)
 drawGraph(tree)
 </script>
 
