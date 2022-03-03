@@ -17,6 +17,7 @@ Work in progress from highest to lowest priority:
   * Visualisation of phylogenetic trees.
   * Generalized environment variables for easier deployment on different systems.
   * Better documentation. When the project gets closer to production, the priority of the documentation will increase.
+  * Some packages may not be listed as of now, and all packages versions need to specified.
 
 
 
