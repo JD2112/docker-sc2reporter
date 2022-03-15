@@ -11,18 +11,20 @@ Thus create a virtual environment and install the required packages:
 ```bash
 conda create --name sc2rep
 conda activate sc2rep
-conda install --file requirements.txt
+conda install --file sc2reporter/requirements.txt
 ```
 Then we need to start the database. Go into the docker-compose.yml file and comment out everything that isn't the mongo service.
 Run following command with docker running in the background:
 ```bash
+apt install docker-compose
 docker-compose up
 ```
 This spins up a mongodb. Then we need to insert users into db for the login component to work.
 We open a new terminal and navigate to the docker-sc2reporter directory:
 ```bash
 cd utils
-python add_user.py
+conda activate sc2rep
+python3 add_user.py
 ```
 
 Then enter "Test" for every required input demanded by the python script. 
