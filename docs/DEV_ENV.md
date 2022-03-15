@@ -11,7 +11,7 @@ Thus create a virtual environment and install the required packages:
 ```bash
 conda create --name sc2rep
 conda activate sc2rep
-conda install --file requirements.txt
+conda install --file sc2reporter/requirements.txt
 ```
 Then we need to start the database. Go into the docker-compose.yml file and comment out everything that isn't the mongo service.
 Run following command with docker running in the background:
