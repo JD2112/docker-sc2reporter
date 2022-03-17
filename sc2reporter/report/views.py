@@ -343,11 +343,10 @@ def create_tree(group, value):
         "tree": str(tree),
         "timeline_grouped": True,
     }
-    tree = n2json(tree)
-    # list_dict_tree = (newick_to_cyto(tree))
-    # print(sample_metadata)
-    # print(sample_metadata)
-    return render_template('tree.html', tree=tree)
+
+    # print(tree)
+    pprint(sample_metadata)
+    return render_template('tree.html', tree=tree, meta_data = sample_metadata)
 
 def get_similar_samples(sample_to_report, all_samples, max_diffs):
 
@@ -722,10 +721,54 @@ def n2json(text):
         elif char not in special_chars and text[counter-1] in ':':
             res = re.split( ',|\)', text[counter:])[0]
             #Checks if its root edge or node edge
-            if text[counter-2] in ')':#root
+            #root
+            if text[counter-2] in ')':
                 s, t = num_root-1, num_root
-            else:#leaf
+            #leaf
+            else:
                 s, t = num_root-1, str(graph['nodes'][-1]['id']).replace('(','')
-            if res == 0: res = 0.5
             graph['links'].append({'value':res, 'source':s, 'target':t})
+    
+    #Sorry for this, it is truly horrible
+    #It checks all the links which have 0 distance in between and should be combined
+    # graph['links']=(sorted(graph['links'], key = lambda d:d['source']))
+    # newLinks = {}
+    # flag2 = 1
+    # for x in range(len(graph['links'])):
+    #     flag = False
+    #     #Checks if its an edge between two roots and if the length is 0
+    #     if float(graph['links'][x]['value']) == 0 and isinstance(graph['links'][x]['target'], int):
+    #         #If 'source' is saved, just appends newLinks, otherwise it creates the key
+    #         for key in newLinks:
+    #             if graph['links'][x]['source'] in newLinks[key]:
+    #                 newLinks[key].append(graph['links'][x]['target'])
+    #                 flag = True
+    #                 flag2 += 1
+    #         if not flag:
+    #             newLinks[graph['links'][x]['source']] = [graph['links'][x]['target']]
+    #             flag2 += 1
+    #     elif float(graph['links'][x]['value']) != 0 and isinstance(graph['links'][x]['target'], int): 
+    #         print(graph['links'][x])
+    # print(newLinks)
+    # print(flag2)
+    # solver = {}
+    # for key in newLinks:
+    #     for x in newLinks[key]:
+    #         solver[x] = key
+
+    # print (solver)
+    
+    # for key in graph:
+    #     if key == 'nodes':
+    #         #Makes a copy of the graph in order not to update while iterating over itself
+    #         for ele in graph[key][:]:
+    #             if ele['id'] in solver:
+    #                 removed = graph[key].remove(ele) 
+    #     else:
+    #         for counter, ele in enumerate(graph[key][:]):
+    #             if ele['source'] in solver:
+    #                 graph[key][counter]['source'] = solver[ele['source']]
+    #         pprint( graph[key])
+    pprint(graph['links'])
+
     return graph

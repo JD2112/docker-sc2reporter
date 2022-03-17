@@ -123,7 +123,6 @@ function D3MSTree(element_id,data,callback,height,width){
         this.force_links = this.d3_force_directed_graph.links();
 
         if (data['nexus'] || data['nwk']){
-                        console.log(data)
 			var root = data['nexus'] ? this.parseNexus(data['nexus']) : this.parseNewick(data['nwk']);
 			if (data['layout_data'] && data['layout_data'].nodes_links && data['layout_data'].nodes_links.backup) {
 				this.backup = data['layout_data'].nodes_links.backup;
