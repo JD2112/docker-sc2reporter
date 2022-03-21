@@ -3,3 +3,10 @@
   width:100%;
 }
 
+#sidebar{
+  padding:30px;
+}
+
+.first-ele{
+  display:block;
+}
