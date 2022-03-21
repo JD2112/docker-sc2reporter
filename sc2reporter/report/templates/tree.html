@@ -16,11 +16,9 @@
 
 <script>
 
-metaData = {{ meta_data|safe }}
-var data = {'nwk':'{{ tree|safe }}'}
+var data = {{ tree|safe }}
 
 const nodeLabels = document.getElementById('nodeLabels');  
-
 
 
 var tree = new D3MSTree("tree-holder",data);
@@ -28,8 +26,9 @@ var tree = new D3MSTree("tree-holder",data);
 var showLabels = false
 
 tree.centerGraph();
-tree.setNodeSize(10);
-tree.setLinkLength(300);
+
+
+
 
 // Shows or hides all labels when nodeLabels button is pressed
 nodeLabels.addEventListener('click', ()=> {

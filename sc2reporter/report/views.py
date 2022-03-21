@@ -277,7 +277,8 @@ def create_tree(group, value):
 
     presence = defaultdict(set)
     all_samples = set()
-    sample_metadata = []
+    # sample_metadata = []
+    sample_metadata = {}
     pango_color = {}
     nextstrain_color = {}
 
@@ -303,8 +304,19 @@ def create_tree(group, value):
             nextstrain_color[nextstrain_clade] = '#%02X%02X%02X' % (
                 r(), r(), r())
 
-        sample_metadata.append({
-            'id': sample.get('sample_id'),
+        # sample_metadata.append({
+        #     'id': sample.get('sample_id'),
+        #     'year': sample["collection_date"].year,
+        #     'month': '{:02d}'.format(sample["collection_date"].month),
+        #     'day': '{:02d}'.format(sample["collection_date"].day),
+        #     'country': "Sweden",
+        #     'pango': pango_type,
+        #     'pango__color': pango_color[pango_type],
+        #     'nextstrain': nextstrain_clade,
+        #     'nextstrain__color': nextstrain_color[nextstrain_clade],
+        #     'country__color': "#358"
+        # })
+        sample_metadata[sample.get('sample_id')] = {
             'year': sample["collection_date"].year,
             'month': '{:02d}'.format(sample["collection_date"].month),
             'day': '{:02d}'.format(sample["collection_date"].day),
@@ -313,8 +325,10 @@ def create_tree(group, value):
             'pango__color': pango_color[pango_type],
             'nextstrain': nextstrain_clade,
             'nextstrain__color': nextstrain_color[nextstrain_clade],
-            'country__color': "#358"
-        })
+            'country__color': "#358",
+            'time': int(str(sample["collection_date"].year)+str('{:02d}'.format(sample["collection_date"].month))+ str('{:02d}'.format(sample["collection_date"].day)))
+            }
+
 
     distance = defaultdict(dict)
 
@@ -345,7 +359,9 @@ def create_tree(group, value):
     }
 
     # print(tree)
-    pprint(sample_metadata)
+    tree = {'nwk':tree}
+    tree['metadata'] = sample_metadata
+    tree['metadata_options'] = {"time":{"label":"time","coltype":"character","grouptype":"alphabetic","colorscheme":"gradient"}}
     return render_template('tree.html', tree=tree, meta_data = sample_metadata)
 
 def get_similar_samples(sample_to_report, all_samples, max_diffs):
