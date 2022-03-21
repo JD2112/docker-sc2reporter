@@ -358,9 +358,19 @@ def create_tree(group, value):
         "timeline_grouped": True,
     }
 
-    # print(tree)
+    lista = ['year',
+            'month',
+            'day',
+            'country',
+            'pango',
+            'pango__color',
+            'nextstrain',
+            'nextstrain__color',
+            'country__color',
+            'time']
     tree = {'nwk':tree}
     tree['metadata'] = sample_metadata
+    tree['metadata_list'] = lista
     tree['metadata_options'] = {"time":{"label":"time","coltype":"character","grouptype":"alphabetic","colorscheme":"gradient"}}
     return render_template('tree.html', tree=tree, meta_data = sample_metadata)
 
