@@ -9,6 +9,11 @@
 
 
 <div id="sidebar">
+<form class="pure-form">
+        <input type="text" id="searchNode">
+        <button id="submitNode">Highlight node</button>
+</form>
+
 <button class="first-ele"  id="nodeLabels">Show Labels</button>
 <button class="first-ele" id="colourNodes">Colour nodes</button>
 <select name="metaOption" id="metaCats" method="GET">
@@ -24,21 +29,23 @@
 <script>
 
 var data = {{ tree|safe }}
+
+// All the buttons 
 const nodeLabels = document.getElementById('nodeLabels');  
 const nodeColourButton = document.getElementById('colourNodes');  
 const nodeColourDropdown = document.getElementById('metaCats');  
+const searchNode = document.getElementById('searchNode');
+const submitNode = document.getElementById('submitNode');
 
-
+// Initiate the tree and attach it to the 'tree-holder' div
 var tree = new D3MSTree("tree-holder",data);
-
-var showLabels = false
-
+var showLabels = false;
 tree.centerGraph();
-tree.changeCategory('time')
 
 
 
-// Shows or hides all labels when nodeLabels button is pressed
+
+// Actions associated to the buttons
 nodeLabels.addEventListener('click', ()=> {
         showLabels = !showLabels
         tree.showNodeLabels(showLabels);
@@ -49,6 +56,13 @@ nodeColourButton.addEventListener('click', ()=> {
         var metaCat = nodeColourDropdown.options[nodeColourDropdown.selectedIndex].value;
         tree.changeCategory(metaCat)
 })
+
+document.querySelector('form.pure-form').addEventListener('submit', function (e) {
+        //prevent the normal submission of the form
+        e.preventDefault();
+        console.log(searchNode.value.split(" "))
+        tree.highlightIDs(searchNode.value.split(" "), 'lightblue')
+});
 
 </script>
 

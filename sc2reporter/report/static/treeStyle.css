@@ -4,7 +4,11 @@
 }
 
 #sidebar{
-  padding:30px;
+  padding:20px;
+  border:solid;
+  border-radius: 1px;
+  border-color:lightgray;
+  width:140px;
 }
 
 .first-ele{
