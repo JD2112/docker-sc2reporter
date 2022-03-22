@@ -1,14 +1,19 @@
 #tree-holder{
   height:100%;
   width:100%;
+  position: absolute;
+  z-index: 0;
 }
 
 #sidebar{
+  position: absolute;
   padding:20px;
   border:solid;
   border-radius: 1px;
   border-color:lightgray;
   width:140px;
+  display: inline-block;
+  z-index: 1;
 }
 
 .first-ele{
