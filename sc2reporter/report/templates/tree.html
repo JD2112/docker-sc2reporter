@@ -10,7 +10,7 @@
 
 <div id="sidebar">
 <form class="pure-form">
-        <input type="text" id="searchNode">
+        <input type="text" id="searchNode" placeholder="Enter sample name">
         <button id="submitNode">Highlight node</button>
 </form>
 
@@ -21,6 +21,7 @@
         <option value= "{{ ele }}" SELECTED>{{ ele }}</option>
         {% endfor %}
 </select>
+<button id="clearEverything">Clear</button>
 </div>
 
 
@@ -36,6 +37,7 @@ const nodeColourButton = document.getElementById('colourNodes');
 const nodeColourDropdown = document.getElementById('metaCats');  
 const searchNode = document.getElementById('searchNode');
 const submitNode = document.getElementById('submitNode');
+const clearEverything = document.getElementById('clearEverything')
 
 // Initiate the tree and attach it to the 'tree-holder' div
 var tree = new D3MSTree("tree-holder",data);
@@ -46,23 +48,31 @@ tree.centerGraph();
 
 
 // Actions associated to the buttons
+// Shows/hides node and link labels
 nodeLabels.addEventListener('click', ()=> {
         showLabels = !showLabels
         tree.showNodeLabels(showLabels);
         tree.showLinkLabels(showLabels);
 })
 
+// Colors nodes based on selected meta data category
 nodeColourButton.addEventListener('click', ()=> {
         var metaCat = nodeColourDropdown.options[nodeColourDropdown.selectedIndex].value;
         tree.changeCategory(metaCat)
 })
 
+// Highlights node in form
 document.querySelector('form.pure-form').addEventListener('submit', function (e) {
         //prevent the normal submission of the form
         e.preventDefault();
         console.log(searchNode.value.split(" "))
         tree.highlightIDs(searchNode.value.split(" "), 'lightblue')
 });
+
+// Clears all styling
+clearEverything.addEventListener('click', ()=>{
+        tree.highlightIDs([], 'lightblue')
+})
 
 </script>
 
