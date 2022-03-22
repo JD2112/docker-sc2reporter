@@ -9,13 +9,21 @@
 
 
 <div id="sidebar">
-<button class="first-ele"  id="nodeLabels">Show Labels</button>
-<button class="first-ele" id="colourNodes">Colour nodes</button>
+<p>Evaluate your selected nodes here</p>
+<form class="pure-form">
+        <input type="text" id="searchNode" placeholder="Enter sample name">
+        <button id="submitNode">Highlight node</button>
+</form>
+
+<button class="first-ele"  id="nodeLabels">Show/Hide Labels</button>
 <select name="metaOption" id="metaCats" method="GET">
         {% for ele in tree['metadata_list'] %}
         <option value= "{{ ele }}" SELECTED>{{ ele }}</option>
         {% endfor %}
 </select>
+<button class="first-ele" id="colourNodes">Colour nodes</button>
+<button id="clearEverything">Clear</button>
+<button id="download">Download SVG</button>
 </div>
 
 
@@ -24,30 +32,54 @@
 <script>
 
 var data = {{ tree|safe }}
+
+// All the buttons 
 const nodeLabels = document.getElementById('nodeLabels');  
 const nodeColourButton = document.getElementById('colourNodes');  
 const nodeColourDropdown = document.getElementById('metaCats');  
+const searchNode = document.getElementById('searchNode');
+const submitNode = document.getElementById('submitNode');
+const clearEverything = document.getElementById('clearEverything');
+const downloadButton = document.getElementById('download');
 
-
+// Initiate the tree and attach it to the 'tree-holder' div
 var tree = new D3MSTree("tree-holder",data);
-
-var showLabels = false
-
+var showLabels = false;
 tree.centerGraph();
-tree.changeCategory('time')
 
 
 
-// Shows or hides all labels when nodeLabels button is pressed
+
+// Actions associated to the buttons
+// Shows/hides node and link labels
 nodeLabels.addEventListener('click', ()=> {
-        showLabels = !showLabels
+        showLabels = !showLabels;
         tree.showNodeLabels(showLabels);
         tree.showLinkLabels(showLabels);
 })
 
+// Colors nodes based on selected meta data category
 nodeColourButton.addEventListener('click', ()=> {
         var metaCat = nodeColourDropdown.options[nodeColourDropdown.selectedIndex].value;
-        tree.changeCategory(metaCat)
+        tree.changeCategory(metaCat);
+})
+
+// Highlights node in form
+document.querySelector('form.pure-form').addEventListener('submit', function (e) {
+        //prevent the normal submission of the form
+        e.preventDefault();
+        console.log(searchNode.value.split(" "));
+        tree.highlightIDs(searchNode.value.split(" "), 'lightblue');
+});
+
+// Clears all styling
+clearEverything.addEventListener('click', ()=>{
+        tree.highlightIDs([], 'lightblue');
+        tree.changeCategory();
+})
+
+downloadButton.addEventListener('click', ()=>{
+        tree.downloadSVG();
 })
 
 </script>
