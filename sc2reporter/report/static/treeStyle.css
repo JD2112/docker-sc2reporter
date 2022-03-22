@@ -9,11 +9,13 @@
   position: absolute;
   padding:20px;
   border:solid;
-  border-radius: 1px;
-  border-color:lightgray;
-  width:140px;
+  border-radius: 3px;
+  border-color:black;
+  width:200px;
   display: inline-block;
   z-index: 1;
+  background-color: lightgray;
+  font-family: Sans-serif;
 }
 
 .first-ele{
