@@ -277,7 +277,8 @@ def create_tree(group, value):
 
     presence = defaultdict(set)
     all_samples = set()
-    sample_metadata = []
+    # sample_metadata = []
+    sample_metadata = {}
     pango_color = {}
     nextstrain_color = {}
 
@@ -303,8 +304,19 @@ def create_tree(group, value):
             nextstrain_color[nextstrain_clade] = '#%02X%02X%02X' % (
                 r(), r(), r())
 
-        sample_metadata.append({
-            'id': sample.get('sample_id'),
+        # sample_metadata.append({
+        #     'id': sample.get('sample_id'),
+        #     'year': sample["collection_date"].year,
+        #     'month': '{:02d}'.format(sample["collection_date"].month),
+        #     'day': '{:02d}'.format(sample["collection_date"].day),
+        #     'country': "Sweden",
+        #     'pango': pango_type,
+        #     'pango__color': pango_color[pango_type],
+        #     'nextstrain': nextstrain_clade,
+        #     'nextstrain__color': nextstrain_color[nextstrain_clade],
+        #     'country__color': "#358"
+        # })
+        sample_metadata[sample.get('sample_id')] = {
             'year': sample["collection_date"].year,
             'month': '{:02d}'.format(sample["collection_date"].month),
             'day': '{:02d}'.format(sample["collection_date"].day),
@@ -313,8 +325,10 @@ def create_tree(group, value):
             'pango__color': pango_color[pango_type],
             'nextstrain': nextstrain_clade,
             'nextstrain__color': nextstrain_color[nextstrain_clade],
-            'country__color': "#358"
-        })
+            'country__color': "#358",
+            'time': int(str(sample["collection_date"].year)+str('{:02d}'.format(sample["collection_date"].month))+ str('{:02d}'.format(sample["collection_date"].day)))
+            }
+
 
     distance = defaultdict(dict)
 
@@ -343,11 +357,22 @@ def create_tree(group, value):
         "tree": str(tree),
         "timeline_grouped": True,
     }
-    tree = n2json(tree)
-    # list_dict_tree = (newick_to_cyto(tree))
-    # print(sample_metadata)
-    # print(sample_metadata)
-    return render_template('tree.html', tree=tree)
+
+    lista = ['year',
+            'month',
+            'day',
+            'country',
+            'pango',
+            'pango__color',
+            'nextstrain',
+            'nextstrain__color',
+            'country__color',
+            'time']
+    tree = {'nwk':tree}
+    tree['metadata'] = sample_metadata
+    tree['metadata_list'] = lista
+    tree['metadata_options'] = {"time":{"label":"time","coltype":"character","grouptype":"alphabetic","colorscheme":"gradient"}}
+    return render_template('tree.html', tree=tree, meta_data = sample_metadata)
 
 def get_similar_samples(sample_to_report, all_samples, max_diffs):
 
@@ -676,56 +701,3 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('login'))
-
-# Converts newick formatted data to cytoscape format
-
-def n2json(text):
-    #input format (newick):
-    #(A:0.1,B:0.2,(C:0.3,D:0.4):0.5);
-    #returns:
-    #{'links':[
-    #       {'source': 0, 'target': 'A', 'value': '0.1'},
-    #       {'source': 0, 'target': 'B', 'value': '0.2'},
-    #       {'source': 1, 'target': 'C', 'value': '0.3'},
-    #       {'source': 1, 'target': 'D', 'value': '0.4'},
-    #       {'source': 0, 'target': 1, 'value': '0.5'}],
-    #'nodes':[
-    #       {'id': 0, 'size': 0, 'value': 100},
-    #       {'id': 'A', 'size': 3, 'value': 100},
-    #       {'id': 'B', 'size': 3, 'value': 100},
-    #       {'id': 1, 'size': 0, 'value': 100},
-    #       {'id': 'C', 'size': 3, 'value': 100},
-    #       {'id': 'D', 'size': 3, 'value': 100}]}
-    graph = {'links':[], 'nodes':[]}
-    num_root = 0 #Defines which root is used
-    special_chars = '(),:' #Characters that are used as grammar in newick
-    text = text.replace(' ', '') #Removes whitespace
-    for counter, char in enumerate(text):
-        #Branch begins
-        if char == '(':
-            graph['nodes'].append({'id':num_root, 'size':0,'value':100})
-            num_root += 1
-        #Branch ends
-        elif char == ')' and num_root != 1:
-            num_root -= 1
-            dist = text[counter:].split(')')[1][1:]
-            #graph['edges'].append({'s':num_root-1, 't':num_root, 'val':dist})
-       
-        #Check if it's a leaf
-        elif char not in special_chars and text[counter-1] in '(,':
-            _id = text[counter:].split(':')[0].replace('(','')
-            size = 3
-            if {'id':_id, 'size':size,'value':100} not in graph['nodes']:
-                graph['nodes'].append({'id':_id, 'size':size,'value':100})
-       
-        #Check if it's an edge
-        elif char not in special_chars and text[counter-1] in ':':
-            res = re.split( ',|\)', text[counter:])[0]
-            #Checks if its root edge or node edge
-            if text[counter-2] in ')':#root
-                s, t = num_root-1, num_root
-            else:#leaf
-                s, t = num_root-1, str(graph['nodes'][-1]['id']).replace('(','')
-            if res == 0: res = 0.5
-            graph['links'].append({'value':res, 'source':s, 'target':t})
-    return graph
