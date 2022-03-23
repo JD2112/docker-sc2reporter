@@ -54,8 +54,8 @@ If the Test user isn't in the database, the application won't work.
 [ERROR] Connection in use: ('127.0.0.1', 8000)
 [ERROR] Retrying in 1 second.
 [ERROR] Connection in use: ('127.0.0.1', 8000)
-[3799223] [ERROR] Retrying in 1 second.
-[3799223] [ERROR] Can't connect to ('127.0.0.1', 8000)
+[ERROR] Retrying in 1 second.
+[ERROR] Can't connect to ('127.0.0.1', 8000)
 
 ## Solution:
 (sc2rep) jyotirmoy@z6g4:sc2reporter$ sudo fuser -k 8000/tcp
