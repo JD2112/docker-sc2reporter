@@ -41,3 +41,23 @@ You will have to insert the virus data yourself into the database.
 
 Right now the log in function automatically enters a user with Test in all field.
 If the Test user isn't in the database, the application won't work.
+
+## Probable Error handling
+```
+[INFO] Starting gunicorn 20.1.0
+[ERROR] Connection in use: ('127.0.0.1', 8000)
+[ERROR] Retrying in 1 second.
+[ERROR] Connection in use: ('127.0.0.1', 8000)
+[ERROR] Retrying in 1 second.
+[ERROR] Connection in use: ('127.0.0.1', 8000)
+[ERROR] Retrying in 1 second.
+[ERROR] Connection in use: ('127.0.0.1', 8000)
+[ERROR] Retrying in 1 second.
+[ERROR] Connection in use: ('127.0.0.1', 8000)
+[3799223] [ERROR] Retrying in 1 second.
+[3799223] [ERROR] Can't connect to ('127.0.0.1', 8000)
+
+## Solution:
+(sc2rep) jyotirmoy@z6g4:sc2reporter$ sudo fuser -k 8000/tcp
+
+
