@@ -1,87 +1,97 @@
-
 <html>
-<script src="{{url_for('static', filename='js/jquery-1.9.1.min.js')}}"></script>
-<script src="{{url_for('static', filename='js/d3.min.js')}}"></script>
-<script src="{{url_for('static', filename='js/base_tree.js')}}"></script>
-<script src="{{url_for('static', filename='js/d3_m_tree.js')}}"></script>
-<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"> -->
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='treeStyle.css') }}">
+  <script src="{{url_for('static', filename='js/jquery-1.9.1.min.js')}}"></script>
+  <script src="{{url_for('static', filename='js/d3.min.js')}}"></script>
+  <script src="{{url_for('static', filename='js/base_tree.js')}}"></script>
+  <script src="{{url_for('static', filename='js/d3_m_tree.js')}}"></script>
+  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"> -->
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='treeStyle.css') }}">
 
 
-<div id="sidebar">
-<p>Evaluate your selected nodes here</p>
-<form class="pure-form">
-        <input type="text" id="searchNode" placeholder="Enter sample name">
-        <button id="submitNode">Highlight node</button>
-</form>
+  <div id="sidebar">
+    <p>Evaluate your selected nodes here</p>
+    <form class="pure-form">
+      <input type="text" id="searchNodeInput" placeholder="Enter sample name">
+      <button id="submitNodeButton">Highlight node</button>
+    </form>
 
-<button class="first-ele"  id="nodeLabels">Show/Hide Labels</button>
-<select name="metaOption" id="metaCats" method="GET">
-        {% for ele in tree['metadata_list'] %}
-        <option value= "{{ ele }}" SELECTED>{{ ele }}</option>
-        {% endfor %}
-</select>
-<button class="first-ele" id="colourNodes">Colour nodes</button>
-<button id="clearEverything">Clear</button>
-<button id="download">Download SVG</button>
-</div>
-
-
-<div id="tree-holder"></div>
-
-<script>
-
-var data = {{ tree|safe }}
-
-// All the buttons 
-const nodeLabels = document.getElementById('nodeLabels');  
-const nodeColourButton = document.getElementById('colourNodes');  
-const nodeColourDropdown = document.getElementById('metaCats');  
-const searchNode = document.getElementById('searchNode');
-const submitNode = document.getElementById('submitNode');
-const clearEverything = document.getElementById('clearEverything');
-const downloadButton = document.getElementById('download');
-
-// Initiate the tree and attach it to the 'tree-holder' div
-var tree = new D3MSTree("tree-holder",data);
-var showLabels = false;
-tree.centerGraph();
+    <button class="first-ele" id="labelButton">Show/Hide Labels</button>
+    <select name="metaOption" id="metaCategories" method="GET">
+      {% for ele in tree['metadata_list'] %}
+      <option value="{{ ele }}" SELECTED>{{ ele }}</option>
+      {% endfor %}
+    </select>
+    <button class="first-ele" id="colourNodes">Colour nodes</button>
+    <button id="clearButton">Clear Styling</button>
+    <button id="downloadButton">Download SVG</button>
+    <button id="logButton">Log/unlog link lengths</button>
+  </div>
 
 
+  <div id="tree-holder"></div>
+
+  <script>
+    var data = {{ tree|safe }}
+
+    // All the buttons 
+    const labelButton = document.getElementById('labelButton');
+    const nodeColourButton = document.getElementById('colourNodes');
+    const nodeColourDropdown = document.getElementById('metaCategories');
+    const searchNodeInput = document.getElementById('searchNodeInput');
+    const submitNodeButton = document.getElementById('submitNodeButton');
+    const clearButton = document.getElementById('clearButton');
+    const downloadButton = document.getElementById('downloadButton');
+    const logButton = document.getElementById('logButton');
+
+    // Initiate the tree and attach it to the 'tree-holder' div
+    var tree = new D3MSTree("tree-holder", data);
+    var showLabels = false;
+    var loggedLinks = false;
+    var linkLengths = 500;
+    tree.centerGraph();
 
 
-// Actions associated to the buttons
-// Shows/hides node and link labels
-nodeLabels.addEventListener('click', ()=> {
-        showLabels = !showLabels;
-        tree.showNodeLabels(showLabels);
-        tree.showLinkLabels(showLabels);
-})
 
-// Colors nodes based on selected meta data category
-nodeColourButton.addEventListener('click', ()=> {
-        var metaCat = nodeColourDropdown.options[nodeColourDropdown.selectedIndex].value;
-        tree.changeCategory(metaCat);
-})
 
-// Highlights node in form
-document.querySelector('form.pure-form').addEventListener('submit', function (e) {
-        //prevent the normal submission of the form
-        e.preventDefault();
-        console.log(searchNode.value.split(" "));
-        tree.highlightIDs(searchNode.value.split(" "), 'lightblue');
-});
+    // Actions associated to the buttons
+    // Shows/hides node and link labels
+    labelButton.addEventListener('click', () => {
+      showLabels = !showLabels;
+      tree.showNodeLabels(showLabels);
+      tree.showLinkLabels(showLabels);
+    })
 
-// Clears all styling
-clearEverything.addEventListener('click', ()=>{
-        tree.highlightIDs([], 'lightblue');
-        tree.changeCategory();
-})
+    // Colors nodes based on selected meta data category
+    nodeColourButton.addEventListener('click', () => {
+      var metaCat = nodeColourDropdown.options[nodeColourDropdown.selectedIndex].value;
+      tree.changeCategory(metaCat);
+    })
 
-downloadButton.addEventListener('click', ()=>{
-        tree.downloadSVG();
-})
+    // Highlights node in form
+    document.querySelector('form.pure-form').addEventListener('submit', function(e) {
+      //prevent the normal submission of the form
+      e.preventDefault();
+      console.log(searchNodeInput.value.split(" "));
+      tree.highlightIDs(searchNodeInput.value.split(" "), 'lightblue');
+    });
 
-</script>
+    // Clears all styling
+    clearButton.addEventListener('click', () => {
+      tree.highlightIDs([], 'lightblue');
+      tree.changeCategory();
+    })
+
+    downloadButton.addEventListener('click', () => {
+      tree.downloadSVG();
+    })
+
+    logButton.addEventListener('click', () => {
+      loggedLinks = !loggedLinks;
+      if (loggedLinks) {
+        tree.setLinkLength(Math.log(linkLengths));
+      } else {
+        tree.setLinkLength(linkLengths)
+      }
+    })
+  </script>
 
 </html>
