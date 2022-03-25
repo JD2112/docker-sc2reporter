@@ -60,4 +60,17 @@ If the Test user isn't in the database, the application won't work.
 ## Solution:
 (sc2rep) jyotirmoy@z6g4:sc2reporter$ sudo fuser -k 8000/tcp
 
+## Upload the data
+1. add vcf2.pm
+cp vcf2.pm /etc/perl
+
+2. install mongodb
+cpanm MOngoDB
+
+3. Commented out MongoDB::BSON
+4. need to install: sudo perl -MCPAN -e"install DateTime", if not installed before
+5. run ./load_data.sh
+
+
+
 
