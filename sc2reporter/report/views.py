@@ -24,6 +24,7 @@ login_manager.init_app(app)
 login_manager.login_view = "login"
 from pprint import pprint
 
+
 @app.route('/', methods=['GET'])
 @login_required
 def index():
@@ -330,6 +331,7 @@ def create_tree(group, value):
             }
 
 
+
     distance = defaultdict(dict)
 
     for s1 in all_samples:
@@ -370,7 +372,15 @@ def create_tree(group, value):
             'time']
     tree = {'nwk':tree}
     tree['metadata'] = sample_metadata
-    tree['metadata_list'] = lista
+
+    
+    metaLista = set()
+    for key in sample_metadata:
+        for key2 in sample_metadata[key]:
+            metaLista.add(key2)
+    metaLista = list(metaLista) 
+
+    tree['metadata_list'] = metaLista
     tree['metadata_options'] = {"time":{"label":"time","coltype":"character","grouptype":"alphabetic","colorscheme":"gradient"}}
     return render_template('tree.html', tree=tree, meta_data = sample_metadata)
 
