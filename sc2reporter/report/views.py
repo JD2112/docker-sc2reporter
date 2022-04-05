@@ -24,6 +24,7 @@ login_manager.init_app(app)
 login_manager.login_view = "login"
 from pprint import pprint
 
+
 @app.route('/', methods=['GET'])
 @login_required
 def index():
@@ -303,19 +304,7 @@ def create_tree(group, value):
         if nextstrain_clade not in nextstrain_color:
             nextstrain_color[nextstrain_clade] = '#%02X%02X%02X' % (
                 r(), r(), r())
-
-        # sample_metadata.append({
-        #     'id': sample.get('sample_id'),
-        #     'year': sample["collection_date"].year,
-        #     'month': '{:02d}'.format(sample["collection_date"].month),
-        #     'day': '{:02d}'.format(sample["collection_date"].day),
-        #     'country': "Sweden",
-        #     'pango': pango_type,
-        #     'pango__color': pango_color[pango_type],
-        #     'nextstrain': nextstrain_clade,
-        #     'nextstrain__color': nextstrain_color[nextstrain_clade],
-        #     'country__color': "#358"
-        # })
+                
         sample_metadata[sample.get('sample_id')] = {
             'year': sample["collection_date"].year,
             'month': '{:02d}'.format(sample["collection_date"].month),
@@ -328,6 +317,7 @@ def create_tree(group, value):
             'country__color': "#358",
             'time': int(str(sample["collection_date"].year)+str('{:02d}'.format(sample["collection_date"].month))+ str('{:02d}'.format(sample["collection_date"].day)))
             }
+
 
 
     distance = defaultdict(dict)
@@ -351,26 +341,17 @@ def create_tree(group, value):
     dm = DistanceMatrix(data, ids)
     tree = nj(dm, result_constructor = str)
 
-    microreact_data = {
-        "data": sample_metadata,
-        "name": value,
-        "tree": str(tree),
-        "timeline_grouped": True,
-    }
-
-    lista = ['year',
-            'month',
-            'day',
-            'country',
-            'pango',
-            'pango__color',
-            'nextstrain',
-            'nextstrain__color',
-            'country__color',
-            'time']
     tree = {'nwk':tree}
     tree['metadata'] = sample_metadata
-    tree['metadata_list'] = lista
+
+    
+    metaLista = set()
+    for key in sample_metadata:
+        for key2 in sample_metadata[key]:
+            metaLista.add(key2)
+    metaLista = list(metaLista) 
+
+    tree['metadata_list'] = metaLista
     tree['metadata_options'] = {"time":{"label":"time","coltype":"character","grouptype":"alphabetic","colorscheme":"gradient"}}
     return render_template('tree.html', tree=tree, meta_data = sample_metadata)
 

@@ -1055,8 +1055,9 @@ D3MSTree.prototype._setNodeText = function(){
                                 return "ND";
                         }                    
                 }
-                return  it.id
+                return  self._getIDsForNode(it.id)
         });
+        
 };
 
 D3MSTree.prototype.delOtherNodes = function(nodes) {
