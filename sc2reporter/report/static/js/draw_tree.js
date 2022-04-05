@@ -130,4 +130,7 @@ function drawTree(data){
       
       tree.clearSelection()
       tree.centerGraph()
-    })}
+      
+    })
+    return tree;
+}

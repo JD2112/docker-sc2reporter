@@ -304,19 +304,7 @@ def create_tree(group, value):
         if nextstrain_clade not in nextstrain_color:
             nextstrain_color[nextstrain_clade] = '#%02X%02X%02X' % (
                 r(), r(), r())
-
-        # sample_metadata.append({
-        #     'id': sample.get('sample_id'),
-        #     'year': sample["collection_date"].year,
-        #     'month': '{:02d}'.format(sample["collection_date"].month),
-        #     'day': '{:02d}'.format(sample["collection_date"].day),
-        #     'country': "Sweden",
-        #     'pango': pango_type,
-        #     'pango__color': pango_color[pango_type],
-        #     'nextstrain': nextstrain_clade,
-        #     'nextstrain__color': nextstrain_color[nextstrain_clade],
-        #     'country__color': "#358"
-        # })
+                
         sample_metadata[sample.get('sample_id')] = {
             'year': sample["collection_date"].year,
             'month': '{:02d}'.format(sample["collection_date"].month),
@@ -353,23 +341,6 @@ def create_tree(group, value):
     dm = DistanceMatrix(data, ids)
     tree = nj(dm, result_constructor = str)
 
-    microreact_data = {
-        "data": sample_metadata,
-        "name": value,
-        "tree": str(tree),
-        "timeline_grouped": True,
-    }
-
-    lista = ['year',
-            'month',
-            'day',
-            'country',
-            'pango',
-            'pango__color',
-            'nextstrain',
-            'nextstrain__color',
-            'country__color',
-            'time']
     tree = {'nwk':tree}
     tree['metadata'] = sample_metadata
 
